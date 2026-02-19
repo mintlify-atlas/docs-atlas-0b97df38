@@ -1,0 +1,154 @@
+{
+  "projectType": "frontend",
+  "projectName": "Excalidraw",
+  "projectDescription": "Virtual whiteboard for sketching hand-drawn like diagrams with React",
+  "theme": "palm",
+  "primaryColor": "#6965db",
+  "lightColor": "#a5d8ff",
+  "darkColor": "#4c6ef5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/elements",
+              "concepts/app-state",
+              "concepts/scene",
+              "concepts/collaboration"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/customization",
+              "guides/theming",
+              "guides/i18n",
+              "guides/export",
+              "guides/storage",
+              "guides/embedding"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/excalidraw",
+              "components/main-menu",
+              "components/sidebar",
+              "components/footer",
+              "components/welcome-screen",
+              "components/buttons"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/react-integration",
+              "examples/nextjs",
+              "examples/vanilla-js"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Components",
+            "pages": [
+              "api/excalidraw-component",
+              "api/ui-components"
+            ]
+          },
+          {
+            "group": "Props & Options",
+            "pages": [
+              "api/props",
+              "api/ui-options",
+              "api/initial-data"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/element-utils",
+              "api/export-utils",
+              "api/scene-utils",
+              "api/restore-utils"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/elements",
+              "api/types/app-state",
+              "api/types/data"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Contributing",
+        "groups": [
+          {
+            "group": "Development",
+            "pages": [
+              "contributing/setup",
+              "contributing/architecture",
+              "contributing/guidelines",
+              "contributing/testing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Infinite canvas-based whiteboard",
+    "Hand-drawn style rendering",
+    "React component library",
+    "Real-time collaboration support",
+    "Export to PNG, SVG, and clipboard",
+    "Customizable UI and theming",
+    "i18n localization support",
+    "Element linking and binding",
+    "Shape libraries and templates",
+    "Command palette",
+    "Image support and cropping",
+    "Elbow arrows and flowcharts"
+  ],
+  "publicApiSurface": [
+    "Excalidraw - Main React component",
+    "MainMenu - Customizable main menu component",
+    "Sidebar - Sidebar component",
+    "Footer - Footer component",
+    "WelcomeScreen - Welcome screen component",
+    "Button - Button component",
+    "LiveCollaborationTrigger - Collaboration trigger",
+    "exportToCanvas() - Export scene to canvas",
+    "exportToBlob() - Export scene to blob",
+    "exportToSvg() - Export scene to SVG",
+    "exportToClipboard() - Export to clipboard",
+    "restoreElements() - Restore elements from data",
+    "restoreAppState() - Restore app state",
+    "serializeAsJSON() - Serialize scene to JSON",
+    "loadFromBlob() - Load scene from blob",
+    "mutateElement() - Mutate element properties",
+    "newElementWith() - Create new element with properties",
+    "getNonDeletedElements() - Get non-deleted elements",
+    "getSceneVersion() - Get scene version",
+    "convertToExcalidrawElements() - Convert to Excalidraw elements",
+    "useI18n() - Internationalization hook",
+    "languages - Available languages"
+  ]
+}
