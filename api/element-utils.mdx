@@ -1,0 +1,670 @@
+---
+title: "Element Utilities"
+description: "Utility functions for manipulating and working with Excalidraw elements"
+---
+
+# Element Utilities
+
+Utility functions for creating, mutating, and working with Excalidraw elements.
+
+## Element Creation
+
+### newElement
+
+Creates a new generic Excalidraw element.
+
+```typescript
+function newElement(
+  opts: {
+    type: ExcalidrawGenericElement["type"];
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawGenericElement>
+```
+
+<ParamField path="opts.type" type="string" required>
+  Element type (e.g., "rectangle", "ellipse", "diamond")
+</ParamField>
+
+<ParamField path="opts.x" type="number" required>
+  X coordinate of the element
+</ParamField>
+
+<ParamField path="opts.y" type="number" required>
+  Y coordinate of the element
+</ParamField>
+
+<ParamField path="opts.width" type="number" default="0">
+  Width of the element
+</ParamField>
+
+<ParamField path="opts.height" type="number" default="0">
+  Height of the element
+</ParamField>
+
+<ParamField path="opts.angle" type="Radians" default="0">
+  Rotation angle in radians
+</ParamField>
+
+<ParamField path="opts.strokeColor" type="string">
+  Stroke color for the element
+</ParamField>
+
+<ParamField path="opts.backgroundColor" type="string">
+  Background fill color
+</ParamField>
+
+<ParamField path="opts.fillStyle" type="string">
+  Fill style ("solid", "hachure", "cross-hatch")
+</ParamField>
+
+<ParamField path="opts.strokeWidth" type="number">
+  Width of the stroke
+</ParamField>
+
+<ParamField path="opts.roughness" type="number">
+  Roughness level for hand-drawn appearance
+</ParamField>
+
+<ParamField path="opts.opacity" type="number">
+  Opacity value (0-100)
+</ParamField>
+
+<ResponseField name="element" type="ExcalidrawElement">
+  The newly created element with all properties initialized
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { newElement } from "@excalidraw/excalidraw";
+
+const rectangle = newElement({
+  type: "rectangle",
+  x: 100,
+  y: 100,
+  width: 200,
+  height: 150,
+  strokeColor: "#000000",
+  backgroundColor: "#ffffff",
+  fillStyle: "hachure",
+  strokeWidth: 2,
+  roughness: 1,
+  opacity: 100,
+});
+```
+
+### newTextElement
+
+Creates a new text element with automatic dimension calculations.
+
+```typescript
+function newTextElement(
+  opts: {
+    text: string;
+    fontSize?: number;
+    fontFamily?: FontFamilyValues;
+    textAlign?: TextAlign;
+    verticalAlign?: VerticalAlign;
+    containerId?: string | null;
+    lineHeight?: number;
+    autoResize?: boolean;
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawTextElement>
+```
+
+<ParamField path="opts.text" type="string" required>
+  Text content to display
+</ParamField>
+
+<ParamField path="opts.fontSize" type="number">
+  Font size in pixels
+</ParamField>
+
+<ParamField path="opts.fontFamily" type="FontFamilyValues">
+  Font family identifier (FONT_FAMILY constant)
+</ParamField>
+
+<ParamField path="opts.textAlign" type="'left' | 'center' | 'right'">
+  Horizontal text alignment
+</ParamField>
+
+<ParamField path="opts.verticalAlign" type="'top' | 'middle'">
+  Vertical text alignment
+</ParamField>
+
+<ParamField path="opts.containerId" type="string | null">
+  ID of container element (for bound text)
+</ParamField>
+
+<ParamField path="opts.autoResize" type="boolean" default="true">
+  Whether text should auto-resize
+</ParamField>
+
+**Example:**
+
+```typescript
+import { newTextElement, FONT_FAMILY } from "@excalidraw/excalidraw";
+
+const textElement = newTextElement({
+  text: "Hello, World!",
+  x: 100,
+  y: 100,
+  fontSize: 20,
+  fontFamily: FONT_FAMILY.Virgil,
+  textAlign: "center",
+  strokeColor: "#000000",
+});
+```
+
+### newLinearElement
+
+Creates a line or arrow element.
+
+```typescript
+function newLinearElement(
+  opts: {
+    type: "line" | "arrow";
+    points?: LocalPoint[];
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawLinearElement>
+```
+
+<ParamField path="opts.type" type="'line' | 'arrow'" required>
+  Type of linear element
+</ParamField>
+
+<ParamField path="opts.points" type="LocalPoint[]">
+  Array of points [x, y] defining the line path
+</ParamField>
+
+**Example:**
+
+```typescript
+import { newLinearElement } from "@excalidraw/excalidraw";
+
+const line = newLinearElement({
+  type: "line",
+  x: 100,
+  y: 100,
+  points: [
+    [0, 0],
+    [100, 50],
+    [200, 100],
+  ],
+  strokeColor: "#000000",
+});
+```
+
+### newArrowElement
+
+Creates an arrow element with optional arrowheads.
+
+```typescript
+function newArrowElement(
+  opts: {
+    type: "arrow";
+    startArrowhead?: Arrowhead | null;
+    endArrowhead?: Arrowhead | null;
+    points?: LocalPoint[];
+    elbowed?: boolean;
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawArrowElement>
+```
+
+<ParamField path="opts.startArrowhead" type="Arrowhead | null">
+  Arrowhead style for start point ("arrow", "dot", "bar", etc.)
+</ParamField>
+
+<ParamField path="opts.endArrowhead" type="Arrowhead | null">
+  Arrowhead style for end point
+</ParamField>
+
+<ParamField path="opts.elbowed" type="boolean">
+  Whether the arrow should use elbow routing
+</ParamField>
+
+**Example:**
+
+```typescript
+import { newArrowElement } from "@excalidraw/excalidraw";
+
+const arrow = newArrowElement({
+  type: "arrow",
+  x: 100,
+  y: 100,
+  points: [
+    [0, 0],
+    [200, 0],
+  ],
+  startArrowhead: null,
+  endArrowhead: "arrow",
+  strokeColor: "#000000",
+});
+```
+
+### newImageElement
+
+Creates an image element.
+
+```typescript
+function newImageElement(
+  opts: {
+    type: "image";
+    fileId?: string | null;
+    status?: "pending" | "saved" | "error";
+    scale?: [number, number];
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawImageElement>
+```
+
+<ParamField path="opts.fileId" type="string | null">
+  ID of the file in BinaryFiles
+</ParamField>
+
+<ParamField path="opts.status" type="'pending' | 'saved' | 'error'">
+  Loading status of the image
+</ParamField>
+
+<ParamField path="opts.scale" type="[number, number]">
+  Scale factors [x, y] for the image
+</ParamField>
+
+### newFrameElement
+
+Creates a frame element for grouping.
+
+```typescript
+function newFrameElement(
+  opts: {
+    name?: string;
+  } & ElementConstructorOpts
+): NonDeleted<ExcalidrawFrameElement>
+```
+
+<ParamField path="opts.name" type="string | null">
+  Optional name for the frame
+</ParamField>
+
+## Element Mutation
+
+### mutateElement
+
+Mutates an existing element with updates and bumps its version.
+
+```typescript
+function mutateElement<TElement extends ExcalidrawElement>(
+  element: TElement,
+  elementsMap: ElementsMap,
+  updates: ElementUpdate<TElement>,
+  options?: {
+    isDragging?: boolean;
+  }
+): TElement
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  The element to mutate
+</ParamField>
+
+<ParamField path="elementsMap" type="ElementsMap" required>
+  Map of all elements (for context)
+</ParamField>
+
+<ParamField path="updates" type="Partial<TElement>" required>
+  Properties to update (excludes 'id' and 'updated')
+</ParamField>
+
+<ParamField path="options.isDragging" type="boolean">
+  Whether the element is being dragged
+</ParamField>
+
+<ResponseField name="element" type="TElement">
+  The mutated element with updated version and versionNonce
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { mutateElement } from "@excalidraw/excalidraw";
+
+mutateElement(element, elementsMap, {
+  x: 150,
+  y: 200,
+  width: 300,
+});
+```
+
+### newElementWith
+
+Creates a new element instance with updates (immutable operation).
+
+```typescript
+function newElementWith<TElement extends ExcalidrawElement>(
+  element: TElement,
+  updates: ElementUpdate<TElement>,
+  force?: boolean
+): TElement
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  The base element
+</ParamField>
+
+<ParamField path="updates" type="Partial<TElement>" required>
+  Properties to update
+</ParamField>
+
+<ParamField path="force" type="boolean" default="false">
+  Force regeneration even if no changes detected
+</ParamField>
+
+<ResponseField name="element" type="TElement">
+  New element instance with updates applied
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { newElementWith } from "@excalidraw/excalidraw";
+
+const updatedElement = newElementWith(element, {
+  backgroundColor: "#ff0000",
+  opacity: 80,
+});
+```
+
+### bumpVersion
+
+Bumps element version, versionNonce, and updated timestamp.
+
+```typescript
+function bumpVersion<T extends ExcalidrawElement>(
+  element: T,
+  version?: number
+): T
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  The element to bump
+</ParamField>
+
+<ParamField path="version" type="number">
+  Optional specific version to set (will be incremented by 1)
+</ParamField>
+
+**Example:**
+
+```typescript
+import { bumpVersion } from "@excalidraw/excalidraw";
+
+bumpVersion(element);
+```
+
+## Element Queries
+
+### getNonDeletedElements
+
+Filters out deleted elements from an array.
+
+```typescript
+function getNonDeletedElements<T extends ExcalidrawElement>(
+  elements: readonly T[]
+): readonly NonDeleted<T>[]
+```
+
+<ParamField path="elements" type="readonly ExcalidrawElement[]" required>
+  Array of elements to filter
+</ParamField>
+
+<ResponseField name="elements" type="NonDeleted<ExcalidrawElement>[]">
+  Array of non-deleted elements
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { getNonDeletedElements } from "@excalidraw/excalidraw";
+
+const activeElements = getNonDeletedElements(allElements);
+```
+
+### getSceneVersion
+
+Calculates the scene version by summing element versions.
+
+```typescript
+function getSceneVersion(elements: readonly ExcalidrawElement[]): number
+```
+
+<ParamField path="elements" type="readonly ExcalidrawElement[]" required>
+  Elements to calculate version from
+</ParamField>
+
+<ResponseField name="version" type="number">
+  Sum of all element versions
+</ResponseField>
+
+**Note:** This function is deprecated. Use `hashElementsVersion` instead for better performance.
+
+### hashElementsVersion
+
+Generates a hash of elements' versionNonce values using the djb2 algorithm.
+
+```typescript
+function hashElementsVersion(elements: ElementsMapOrArray): number
+```
+
+<ParamField path="elements" type="ElementsMapOrArray" required>
+  Elements to hash (array or Map)
+</ParamField>
+
+<ResponseField name="hash" type="number">
+  Unsigned 32-bit integer hash
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { hashElementsVersion } from "@excalidraw/excalidraw";
+
+const versionHash = hashElementsVersion(elements);
+```
+
+### hashString
+
+Hashes a string using the djb2 algorithm.
+
+```typescript
+function hashString(s: string): number
+```
+
+<ParamField path="s" type="string" required>
+  String to hash
+</ParamField>
+
+<ResponseField name="hash" type="number">
+  Unsigned 32-bit integer hash
+</ResponseField>
+
+## Element Bounds
+
+### getElementAbsoluteCoords
+
+Gets absolute coordinates of an element in scene coordinates.
+
+```typescript
+function getElementAbsoluteCoords(
+  element: ExcalidrawElement,
+  elementsMap: ElementsMap,
+  includeBoundText?: boolean
+): [number, number, number, number, number, number]
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  The element to get coordinates for
+</ParamField>
+
+<ParamField path="elementsMap" type="ElementsMap" required>
+  Map of all elements
+</ParamField>
+
+<ParamField path="includeBoundText" type="boolean" default="false">
+  Whether to include bound text in calculations
+</ParamField>
+
+<ResponseField name="coords" type="[x1, y1, x2, y2, cx, cy]">
+  Array containing: [x1, y1, x2, y2, centerX, centerY]
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { getElementAbsoluteCoords } from "@excalidraw/excalidraw";
+
+const [x1, y1, x2, y2, cx, cy] = getElementAbsoluteCoords(
+  element,
+  elementsMap
+);
+console.log(`Bounds: (${x1}, ${y1}) to (${x2}, ${y2})`);
+console.log(`Center: (${cx}, ${cy})`);
+```
+
+### getElementBounds
+
+Gets the axis-aligned bounding box for an element.
+
+```typescript
+function getElementBounds(
+  element: ExcalidrawElement,
+  elementsMap: ElementsMap,
+  nonRotated?: boolean
+): Bounds
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  The element to get bounds for
+</ParamField>
+
+<ParamField path="elementsMap" type="ElementsMap" required>
+  Map of all elements
+</ParamField>
+
+<ParamField path="nonRotated" type="boolean" default="false">
+  Whether to get bounds without rotation
+</ParamField>
+
+<ResponseField name="bounds" type="[minX, minY, maxX, maxY]">
+  Bounding box coordinates
+</ResponseField>
+
+### getCommonBounds
+
+Gets the common bounding box for multiple elements.
+
+```typescript
+function getCommonBounds(
+  elements: ElementsMapOrArray,
+  elementsMap?: ElementsMap
+): Bounds
+```
+
+<ParamField path="elements" type="ElementsMapOrArray" required>
+  Elements to get common bounds for
+</ParamField>
+
+<ParamField path="elementsMap" type="ElementsMap">
+  Optional elements map for context
+</ParamField>
+
+<ResponseField name="bounds" type="[minX, minY, maxX, maxY]">
+  Common bounding box containing all elements
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { getCommonBounds } from "@excalidraw/excalidraw";
+
+const [minX, minY, maxX, maxY] = getCommonBounds(selectedElements);
+const width = maxX - minX;
+const height = maxY - minY;
+```
+
+### getVisibleSceneBounds
+
+Gets the visible bounds of the canvas viewport in scene coordinates.
+
+```typescript
+function getVisibleSceneBounds(state: {
+  scrollX: number;
+  scrollY: number;
+  width: number;
+  height: number;
+  zoom: { value: number };
+}): SceneBounds
+```
+
+<ParamField path="state.scrollX" type="number" required>
+  Horizontal scroll offset
+</ParamField>
+
+<ParamField path="state.scrollY" type="number" required>
+  Vertical scroll offset
+</ParamField>
+
+<ParamField path="state.width" type="number" required>
+  Canvas width
+</ParamField>
+
+<ParamField path="state.height" type="number" required>
+  Canvas height
+</ParamField>
+
+<ParamField path="state.zoom" type="{ value: number }" required>
+  Current zoom value
+</ParamField>
+
+<ResponseField name="bounds" type="[sceneX, sceneY, sceneX2, sceneY2]">
+  Visible scene bounds
+</ResponseField>
+
+## Element Text
+
+### refreshTextDimensions
+
+Recalculates text element dimensions based on content and container.
+
+```typescript
+function refreshTextDimensions(
+  textElement: ExcalidrawTextElement,
+  container: ExcalidrawTextContainer | null,
+  elementsMap: ElementsMap,
+  text?: string
+): { text: string; x: number; y: number; width: number; height: number } | undefined
+```
+
+<ParamField path="textElement" type="ExcalidrawTextElement" required>
+  The text element to refresh
+</ParamField>
+
+<ParamField path="container" type="ExcalidrawTextContainer | null" required>
+  Container element (if text is bound)
+</ParamField>
+
+<ParamField path="elementsMap" type="ElementsMap" required>
+  Map of all elements
+</ParamField>
+
+<ParamField path="text" type="string">
+  Optional text override
+</ParamField>
+
+<ResponseField name="dimensions" type="object">
+  Updated text, position, and dimensions
+</ResponseField>
+
+## See Also
+
+- [Export Utils](/api/export-utils) - Functions for exporting elements
+- [Scene Utils](/api/scene-utils) - Scene management utilities
+- [Restore Utils](/api/restore-utils) - Data restoration functions

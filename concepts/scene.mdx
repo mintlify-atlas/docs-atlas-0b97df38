@@ -1,0 +1,555 @@
+---
+title: "Scene"
+description: "Understanding Excalidraw's Scene class, element management, and state synchronization"
+---
+
+## Overview
+
+The `Scene` class is the central data structure in Excalidraw that manages all elements in a drawing. It provides a reactive system for element storage, retrieval, mutation, and change tracking, serving as the single source of truth for the canvas state.
+
+## Scene Architecture
+
+The Scene maintains multiple internal data structures optimized for different access patterns:
+
+```typescript packages/element/src/Scene.ts
+export class Scene {
+  // All elements including deleted
+  private elements: readonly OrderedExcalidrawElement[];
+  private elementsMap: SceneElementsMap;
+  
+  // Non-deleted elements only
+  private nonDeletedElements: readonly Ordered<NonDeletedExcalidrawElement>[];
+  private nonDeletedElementsMap: NonDeletedSceneElementsMap;
+  
+  // Frame-specific elements
+  private frames: readonly ExcalidrawFrameLikeElement[];
+  private nonDeletedFramesLikes: readonly NonDeleted<ExcalidrawFrameLikeElement>[];
+  
+  // Cache and callbacks
+  private selectedElementsCache: SelectionCache;
+  private callbacks: Set<SceneStateCallback>;
+  private sceneNonce: number | undefined;
+}
+```
+
+<Note>
+  The Scene maintains both array and map representations of elements. Arrays preserve ordering, while maps provide O(1) lookup by element ID.
+</Note>
+
+## Creating a Scene
+
+```typescript packages/element/src/Scene.ts
+import { Scene } from "@excalidraw/element";
+
+// Create empty scene
+const scene = new Scene();
+
+// Create scene with initial elements
+const scene = new Scene(elements);
+
+// Create scene with elements map
+const elementsMap = new Map(elements.map(el => [el.id, el]));
+const scene = new Scene(elementsMap);
+
+// Skip fractional index validation (for performance)
+const scene = new Scene(elements, { skipValidation: true });
+```
+
+## Element Access
+
+### Getting Elements
+
+```typescript packages/element/src/Scene.ts
+// Get all elements including deleted
+const allElements = scene.getElementsIncludingDeleted();
+const allElementsMap = scene.getElementsMapIncludingDeleted();
+
+// Get non-deleted elements only
+const activeElements = scene.getNonDeletedElements();
+const activeElementsMap = scene.getNonDeletedElementsMap();
+
+// Get frame elements
+const allFrames = scene.getFramesIncludingDeleted();
+const activeFrames = scene.getNonDeletedFramesLikes();
+```
+
+### Getting Individual Elements
+
+```typescript packages/element/src/Scene.ts
+// Get element by ID (returns null if not found)
+const element = scene.getElement<ExcalidrawRectangleElement>("elementId");
+
+// Get non-deleted element (returns null if deleted or not found)
+const activeElement = scene.getNonDeletedElement("elementId");
+
+// Get element index in array
+const index = scene.getElementIndex("elementId");
+```
+
+### Container Relationships
+
+```typescript packages/element/src/Scene.ts
+// Get container element for bound text
+const container = scene.getContainerElement(textElement);
+
+// Get elements by ID or group ID
+const elements = scene.getElementsFromId("idOrGroupId");
+// Returns element if ID matches, or all elements in group if group ID matches
+```
+
+## Modifying the Scene
+
+### Replacing All Elements
+
+The primary method for updating the scene:
+
+```typescript packages/element/src/Scene.ts
+scene.replaceAllElements(newElements);
+// Accepts array or Map of elements
+// Automatically:
+// - Syncs invalid fractional indices
+// - Updates internal maps and arrays
+// - Separates frames from other elements
+// - Filters deleted vs non-deleted elements
+// - Triggers update callbacks
+```
+
+<Warning>
+  `replaceAllElements` validates fractional indices by default. For bulk updates where indices are already valid, use `{ skipValidation: true }` for better performance.
+</Warning>
+
+### Mapping Elements
+
+Update elements with a transformation function:
+
+```typescript packages/element/src/Scene.ts
+const didChange = scene.mapElements((element) => {
+  if (element.type === "rectangle") {
+    return newElementWith(element, { strokeColor: "#ff0000" });
+  }
+  return element; // No change
+});
+
+// Returns true if any element was changed
+// Automatically calls replaceAllElements if changes detected
+```
+
+<Tip>
+  `mapElements` optimizes by only calling `replaceAllElements` if changes are detected, making it safe to use in reactive contexts.
+</Tip>
+
+### Inserting Elements
+
+```typescript packages/element/src/Scene.ts
+// Insert single element at specific index
+scene.insertElementAtIndex(element, 5);
+
+// Insert multiple elements at index
+scene.insertElementsAtIndex([element1, element2], 10);
+
+// Insert element (auto-positions based on frameId)
+scene.insertElement(element);
+// If element has frameId, inserts at frame's index
+// Otherwise, appends to end
+
+// Insert multiple elements
+scene.insertElements([element1, element2, element3]);
+```
+
+<Note>
+  Insert methods automatically sync fractional indices using `syncMovedIndices` to maintain proper ordering.
+</Note>
+
+### Mutating Elements
+
+Mutate elements in place while triggering scene updates:
+
+```typescript packages/element/src/Scene.ts
+scene.mutateElement(
+  element,
+  {
+    x: 200,
+    y: 300,
+    width: 400,
+  },
+  {
+    informMutation: true,  // Trigger scene update (default: true)
+    isDragging: false,     // Whether element is being dragged
+  }
+);
+
+// Returns the mutated element
+// Automatically:
+// - Updates version and versionNonce
+// - Updates timestamp
+// - Triggers scene callbacks if informMutation is true
+```
+
+<Accordion title="When to Use informMutation: false">
+  Set `informMutation: false` when:
+  - Batching multiple mutations and want a single update at the end
+  - Making temporary changes that will be reverted
+  - Updating elements that aren't in the scene (e.g., during element creation)
+
+  ```typescript
+  // Batch mutations
+  scene.mutateElement(el1, updates1, { informMutation: false });
+  scene.mutateElement(el2, updates2, { informMutation: false });
+  scene.mutateElement(el3, updates3, { informMutation: true }); // Trigger once
+  ```
+</Accordion>
+
+## Selection Management
+
+The Scene caches selected elements for performance:
+
+```typescript packages/element/src/Scene.ts
+const selectedElements = scene.getSelectedElements({
+  selectedElementIds: appState.selectedElementIds,
+  
+  // Optional: use custom elements instead of scene elements
+  elements: customElementsArray,
+  
+  // Selection options
+  includeBoundTextElement: true,
+  includeElementsInFrames: false,
+});
+```
+
+<Tabs>
+  <Tab title="Selection Caching">
+    The Scene maintains a sophisticated selection cache:
+
+    ```typescript
+    private selectedElementsCache: {
+      selectedElementIds: AppState["selectedElementIds"] | null;
+      elements: readonly NonDeletedExcalidrawElement[] | null;
+      cache: Map<SelectionHash, NonDeletedExcalidrawElement[]>;
+    };
+    ```
+
+    Cache key includes:
+    - `selectedElementIds` reference
+    - `elements` reference
+    - `includeBoundTextElement` flag
+    - `includeElementsInFrames` flag
+
+    Cache invalidation:
+    - When `selectedElementIds` change
+    - When scene elements change
+    - When selection options change
+  </Tab>
+
+  <Tab title="Selection Options">
+    **includeBoundTextElement**
+    - When `true`, includes text elements bound to selected containers
+    - Useful for moving containers with their labels
+
+    **includeElementsInFrames**
+    - When `true`, includes elements inside selected frames
+    - When `false`, only returns frame elements themselves
+
+    ```typescript
+    // Select frame and all its contents
+    const withContents = scene.getSelectedElements({
+      selectedElementIds: { [frameId]: true },
+      includeElementsInFrames: true,
+    });
+
+    // Select only the frame
+    const frameOnly = scene.getSelectedElements({
+      selectedElementIds: { [frameId]: true },
+      includeElementsInFrames: false,
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Change Tracking
+
+### Scene Nonce
+
+The Scene generates a random nonce on each update for cache invalidation:
+
+```typescript packages/element/src/Scene.ts
+const nonce = scene.getSceneNonce();
+// Returns a random integer that changes on every scene update
+// Useful for renderer cache invalidation
+```
+
+### Subscribing to Updates
+
+Register callbacks to react to scene changes:
+
+```typescript packages/element/src/Scene.ts
+const unsubscribe = scene.onUpdate(() => {
+  console.log("Scene updated!");
+  const elements = scene.getNonDeletedElements();
+  // React to changes...
+});
+
+// Later: unsubscribe to prevent memory leaks
+unsubscribe();
+```
+
+<Warning>
+  Always unsubscribe from scene updates when components unmount to prevent memory leaks.
+</Warning>
+
+### Manual Update Trigger
+
+```typescript packages/element/src/Scene.ts
+scene.triggerUpdate();
+// Manually triggers all registered callbacks
+// Regenerates scene nonce
+// Useful after external element mutations
+```
+
+## Fractional Indices
+
+The Scene automatically manages fractional indices for consistent element ordering:
+
+```typescript packages/element/src/Scene.ts
+// Fractional indices are synced automatically in:
+- replaceAllElements()
+- insertElementAtIndex()
+- insertElementsAtIndex()
+- insertElement()
+- insertElements()
+```
+
+<Accordion title="Fractional Index Implementation">
+  Excalidraw uses the [fractional indexing algorithm](https://github.com/rocicorp/fractional-indexing) for element ordering:
+
+  - Indices are strings like `"a0"`, `"a1"`, `"a0V"`, etc.
+  - Allow inserting between elements without reindexing
+  - Critical for collaboration where multiple users insert elements
+  - Automatically validated in development/test environments
+
+  ```typescript
+  // Validation runs throttled (once per minute) in dev/test
+  validateFractionalIndices(elements, {
+    shouldThrow: isDevEnv() || isTestEnv(),
+    includeBoundTextValidation: true,
+  });
+  ```
+</Accordion>
+
+## Scene Lifecycle
+
+```typescript packages/element/src/Scene.ts
+// Create scene
+const scene = new Scene(elements);
+
+// Use scene
+scene.replaceAllElements(newElements);
+const unsubscribe = scene.onUpdate(callback);
+
+// Cleanup when done
+scene.destroy();
+// Clears all elements, maps, and callbacks
+// Prevents memory leaks and late callback fires
+```
+
+<Warning>
+  Always call `scene.destroy()` when disposing of a Scene instance to prevent memory leaks.
+</Warning>
+
+## Integration with App Component
+
+The Scene is integrated into the main App component:
+
+```typescript
+class App extends React.Component {
+  public scene: Scene = new Scene();
+
+  componentDidMount() {
+    this.scene.onUpdate(() => {
+      this.setState({}); // Trigger re-render
+    });
+  }
+
+  componentWillUnmount() {
+    this.scene.destroy();
+  }
+
+  updateScene = (sceneData: SceneData) => {
+    if (sceneData.elements) {
+      this.scene.replaceAllElements(sceneData.elements);
+    }
+  };
+}
+```
+
+## Performance Considerations
+
+<Tabs>
+  <Tab title="Element Access">
+    ```typescript
+    // ✅ Good: Use maps for ID lookups
+    const element = scene.getElement(id);
+    const map = scene.getElementsMapIncludingDeleted();
+    const element = map.get(id);
+
+    // ❌ Bad: Linear search through array
+    const elements = scene.getElementsIncludingDeleted();
+    const element = elements.find(el => el.id === id);
+    ```
+  </Tab>
+
+  <Tab title="Batch Updates">
+    ```typescript
+    // ✅ Good: Single replaceAllElements call
+    const updatedElements = elements.map(el => {
+      return shouldUpdate(el) ? newElementWith(el, updates) : el;
+    });
+    scene.replaceAllElements(updatedElements);
+
+    // ❌ Bad: Multiple update calls
+    elements.forEach(el => {
+      if (shouldUpdate(el)) {
+        scene.replaceAllElements(
+          scene.getElementsIncludingDeleted().map(e => 
+            e.id === el.id ? newElementWith(e, updates) : e
+          )
+        );
+      }
+    });
+    ```
+  </Tab>
+
+  <Tab title="Selection Caching">
+    ```typescript
+    // ✅ Good: Reuse same options object for cache hits
+    const options = {
+      selectedElementIds: appState.selectedElementIds,
+      includeBoundTextElement: true,
+      includeElementsInFrames: false,
+    };
+    const selected1 = scene.getSelectedElements(options);
+    const selected2 = scene.getSelectedElements(options); // Cache hit!
+
+    // ❌ Bad: New options object each time (cache miss)
+    const selected = scene.getSelectedElements({
+      selectedElementIds: appState.selectedElementIds,
+      includeBoundTextElement: true,
+    });
+    ```
+  </Tab>
+
+  <Tab title="Validation">
+    ```typescript
+    // ✅ Good: Skip validation for trusted data
+    scene.replaceAllElements(elements, { skipValidation: true });
+
+    // ⚠️ Default: Validates fractional indices (throttled)
+    scene.replaceAllElements(elements);
+    // Validation runs at most once per minute in dev/test
+    ```
+  </Tab>
+</Tabs>
+
+## Scene Data Type
+
+When updating scenes through the API, use the `SceneData` type:
+
+```typescript packages/excalidraw/types.ts
+type SceneData = {
+  elements?: ImportedDataState["elements"];
+  appState?: ImportedDataState["appState"];
+  collaborators?: Map<SocketId, Collaborator>;
+  captureUpdate?: CaptureUpdateActionType;
+};
+
+// Usage
+excalidrawAPI.updateScene({
+  elements: newElements,
+  appState: { theme: "dark" },
+});
+```
+
+## Best Practices
+
+<Accordion title="Element Management">
+  - Use `mapElements` for transformations instead of manual array mapping
+  - Always prefer map lookups over array iteration for finding elements
+  - Use `getNonDeletedElements` when you only need active elements
+  - Call `destroy()` when disposing of Scene instances
+</Accordion>
+
+<Accordion title="Performance">
+  - Skip validation with `{ skipValidation: true }` when loading trusted data
+  - Batch element updates into a single `replaceAllElements` call
+  - Use `informMutation: false` when batching mutations
+  - Cache selection options objects to benefit from selection cache
+</Accordion>
+
+<Accordion title="Change Tracking">
+  - Subscribe to scene updates only when necessary
+  - Always unsubscribe in cleanup functions
+  - Use scene nonce for cache invalidation in renderers
+  - Avoid triggering updates during render cycles
+</Accordion>
+
+<Accordion title="Collaboration">
+  - Never mutate elements directly without using Scene methods
+  - Rely on fractional indices for element ordering
+  - Let Scene manage index synchronization automatically
+  - Use version and versionNonce for conflict resolution
+</Accordion>
+
+## Common Patterns
+
+### Bulk Element Update
+
+```typescript
+const updatedElements = scene.getElementsIncludingDeleted().map(element => {
+  if (needsUpdate(element)) {
+    return newElementWith(element, { locked: true });
+  }
+  return element;
+});
+
+scene.replaceAllElements(updatedElements);
+```
+
+### Filtering and Replacing
+
+```typescript
+const activeElements = scene.getNonDeletedElements();
+const filteredElements = activeElements.filter(el => el.type !== "text");
+scene.replaceAllElements(filteredElements);
+```
+
+### Adding New Elements
+
+```typescript
+const newElement = newElement({ type: "rectangle", x: 0, y: 0 });
+
+// Option 1: Insert at end
+scene.insertElement(newElement);
+
+// Option 2: Insert at specific position
+scene.insertElementAtIndex(newElement, 0);
+
+// Option 3: Replace entire array
+const elements = scene.getElementsIncludingDeleted();
+scene.replaceAllElements([...elements, newElement]);
+```
+
+### Removing Elements
+
+```typescript
+// Soft delete (preferred)
+scene.mutateElement(element, { isDeleted: true });
+
+// Hard delete (removes from scene)
+const elements = scene.getElementsIncludingDeleted();
+scene.replaceAllElements(elements.filter(el => el.id !== elementId));
+```
+
+## Related Concepts
+
+- [Elements](/concepts/elements) - Element structure and properties
+- [App State](/concepts/app-state) - Global application state
+- [Collaboration](/concepts/collaboration) - Multi-user scene synchronization

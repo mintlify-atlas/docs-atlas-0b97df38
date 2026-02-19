@@ -1,0 +1,286 @@
+---
+title: UIOptions
+description: Configuration reference for Excalidraw UI features and canvas actions
+---
+
+# UIOptions
+
+The `UIOptions` prop allows you to customize which UI features and canvas actions are available in the Excalidraw editor.
+
+## Type Definition
+
+```typescript
+type UIOptions = Partial<{
+  dockedSidebarBreakpoint: number;
+  canvasActions: CanvasActions;
+  tools: {
+    image: boolean;
+  };
+  getFormFactor?: (
+    editorWidth: number,
+    editorHeight: number,
+  ) => "mobile" | "desktop";
+}>;
+```
+
+## Properties
+
+<ParamField path="dockedSidebarBreakpoint" type="number">
+  The viewport width (in pixels) below which the sidebar switches from docked to floating mode.
+  
+  Allows you to control responsive behavior of the sidebar.
+</ParamField>
+
+<ParamField path="canvasActions" type="CanvasActions">
+  Configuration object controlling which canvas actions are available.
+  
+  See [Canvas Actions](#canvas-actions) below for details.
+</ParamField>
+
+<ParamField path="tools" type="object">
+  Configuration for tool availability.
+  
+  <Expandable title="Properties">
+    <ParamField path="tools.image" type="boolean" default="true">
+      When `false`, hides the image tool from the toolbar.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="getFormFactor" type="function">
+  Optional function to control the editor form factor and desktop UI mode from the host app.
+  
+  If not provided, Excalidraw determines this automatically based on viewport size.
+  
+  ```typescript
+  (editorWidth: number, editorHeight: number) => "mobile" | "desktop"
+  ```
+  
+  <Expandable title="Example">
+    ```typescript
+    UIOptions={{
+      getFormFactor: (width, height) => {
+        // Force mobile UI for narrow viewports
+        return width < 768 ? "mobile" : "desktop";
+      },
+    }}
+    ```
+  </Expandable>
+</ParamField>
+
+## Canvas Actions
+
+The `canvasActions` object controls which actions are available in the canvas menu and UI.
+
+```typescript
+type CanvasActions = Partial<{
+  changeViewBackgroundColor: boolean;
+  clearCanvas: boolean;
+  export: false | ExportOpts;
+  loadScene: boolean;
+  saveToActiveFile: boolean;
+  toggleTheme: boolean | null;
+  saveAsImage: boolean;
+}>;
+```
+
+### Action Properties
+
+<ParamField path="changeViewBackgroundColor" type="boolean" default="true">
+  When `false`, hides the canvas background color picker.
+</ParamField>
+
+<ParamField path="clearCanvas" type="boolean" default="true">
+  When `false`, hides the "Clear canvas" action.
+</ParamField>
+
+<ParamField path="export" type="false | ExportOpts" default="{ saveFileToDisk: true }">
+  Controls export functionality.
+  
+  - `false`: Disables all export features
+  - `ExportOpts`: Configures export behavior (see [Export Options](#export-options))
+</ParamField>
+
+<ParamField path="loadScene" type="boolean" default="true">
+  When `false`, hides the "Load scene" action (open file functionality).
+</ParamField>
+
+<ParamField path="saveToActiveFile" type="boolean" default="true">
+  When `false`, hides the "Save to active file" action.
+</ParamField>
+
+<ParamField path="toggleTheme" type="boolean | null" default="null">
+  Controls the theme toggle button.
+  
+  - `true`: Shows the theme toggle
+  - `false`: Hides the theme toggle
+  - `null`: Default behavior (shows based on context)
+</ParamField>
+
+<ParamField path="saveAsImage" type="boolean" default="true">
+  When `false`, hides the "Save as image" action.
+</ParamField>
+
+## Export Options
+
+When `canvasActions.export` is an object, you can configure export behavior:
+
+```typescript
+type ExportOpts = {
+  saveFileToDisk?: boolean;
+  onExportToBackend?: (
+    exportedElements: readonly NonDeletedExcalidrawElement[],
+    appState: UIAppState,
+    files: BinaryFiles,
+  ) => void;
+  renderCustomUI?: (
+    exportedElements: readonly NonDeletedExcalidrawElement[],
+    appState: UIAppState,
+    files: BinaryFiles,
+    canvas: HTMLCanvasElement,
+  ) => JSX.Element;
+};
+```
+
+<ParamField path="saveFileToDisk" type="boolean" default="true">
+  When `false`, disables the ability to save exports directly to disk.
+</ParamField>
+
+<ParamField path="onExportToBackend" type="function">
+  Custom handler for backend export. Called when user exports the canvas.
+  
+  ```typescript
+  (exportedElements: readonly NonDeletedExcalidrawElement[],
+   appState: UIAppState,
+   files: BinaryFiles) => void
+  ```
+  
+  <Expandable title="Example">
+    ```typescript
+    onExportToBackend: async (elements, appState, files) => {
+      await fetch("/api/export", {
+        method: "POST",
+        body: JSON.stringify({ elements, appState, files }),
+      });
+    }
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField path="renderCustomUI" type="function">
+  Custom UI renderer for the export dialog.
+  
+  ```typescript
+  (exportedElements: readonly NonDeletedExcalidrawElement[],
+   appState: UIAppState,
+   files: BinaryFiles,
+   canvas: HTMLCanvasElement) => JSX.Element
+  ```
+</ParamField>
+
+## Default Values
+
+Excalidraw uses these default values when `UIOptions` is not provided:
+
+```typescript
+const DEFAULT_UI_OPTIONS = {
+  canvasActions: {
+    changeViewBackgroundColor: true,
+    clearCanvas: true,
+    export: { saveFileToDisk: true },
+    loadScene: true,
+    saveToActiveFile: true,
+    toggleTheme: null,
+    saveAsImage: true,
+  },
+  tools: {
+    image: true,
+  },
+};
+```
+
+## Usage Examples
+
+### Minimal UI
+
+Disable most UI actions for a read-only or embedded experience:
+
+```typescript
+<Excalidraw
+  UIOptions={{
+    canvasActions: {
+      changeViewBackgroundColor: false,
+      clearCanvas: false,
+      export: false,
+      loadScene: false,
+      saveToActiveFile: false,
+      saveAsImage: false,
+    },
+    tools: {
+      image: false,
+    },
+  }}
+/>
+```
+
+### Custom Export Only
+
+Enable custom backend export while disabling file downloads:
+
+```typescript
+<Excalidraw
+  UIOptions={{
+    canvasActions: {
+      export: {
+        saveFileToDisk: false,
+        onExportToBackend: async (elements, appState, files) => {
+          // Send to your backend
+          await saveToBackend(elements, appState, files);
+        },
+      },
+    },
+  }}
+/>
+```
+
+### Show Theme Toggle
+
+Explicitly enable the theme toggle:
+
+```typescript
+<Excalidraw
+  UIOptions={{
+    canvasActions: {
+      toggleTheme: true,
+    },
+  }}
+/>
+```
+
+### Custom Form Factor Logic
+
+Control when mobile vs desktop UI is used:
+
+```typescript
+<Excalidraw
+  UIOptions={{
+    getFormFactor: (width, height) => {
+      // Use mobile UI for portrait tablets
+      if (width < 768 || (width < 1024 && height > width)) {
+        return "mobile";
+      }
+      return "desktop";
+    },
+  }}
+/>
+```
+
+## Type Imports
+
+```typescript
+import type {
+  UIOptions,
+  CanvasActions,
+  ExportOpts,
+} from "@excalidraw/excalidraw";
+```

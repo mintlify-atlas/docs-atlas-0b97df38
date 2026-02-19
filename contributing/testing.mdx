@@ -1,0 +1,654 @@
+---
+title: Testing Guide
+description: Learn how to write and run tests for Excalidraw
+---
+
+# Testing Guide
+
+Excalidraw uses comprehensive testing to ensure code quality and prevent regressions. This guide covers testing practices, tools, and workflows.
+
+## Testing Framework
+
+### Vitest
+
+Excalidraw uses [Vitest](https://vitest.dev/) as its test framework:
+
+- **Fast**: Extremely fast test execution
+- **Vite-powered**: Uses Vite's transformation pipeline
+- **Jest-compatible**: Compatible with Jest API and matchers
+- **TypeScript**: First-class TypeScript support
+
+### Testing Libraries
+
+- **[@testing-library/react](https://testing-library.com/react)** - React component testing
+- **[@testing-library/jest-dom](https://github.com/testing-library/jest-dom)** - Custom DOM matchers
+- **vitest-canvas-mock** - Canvas API mocking
+- **fake-indexeddb** - IndexedDB mocking for persistence tests
+
+## Running Tests
+
+### Basic Commands
+
+```bash
+# Run all tests in watch mode
+yarn test
+
+# Run tests once (CI mode)
+yarn test:app --watch=false
+
+# Update test snapshots
+yarn test:update
+
+# Run tests with coverage
+yarn test:coverage
+
+# Watch coverage
+yarn test:coverage:watch
+
+# Run tests with UI
+yarn test:ui
+```
+
+### Running Specific Tests
+
+```bash
+# Run tests matching a pattern
+yarn test element
+
+# Run a specific test file
+yarn test packages/excalidraw/element.test.tsx
+
+# Run tests in a directory
+yarn test packages/common/
+```
+
+### Running All Test Suites
+
+```bash
+# Run all test suites (type checking, linting, tests)
+yarn test:all
+```
+
+This runs:
+1. `yarn test:typecheck` - TypeScript type checking
+2. `yarn test:code` - ESLint code quality checks
+3. `yarn test:other` - Prettier formatting checks
+4. `yarn test:app --watch=false` - All unit/integration tests
+
+## Test Coverage
+
+### Coverage Requirements
+
+Excalidraw enforces minimum coverage thresholds:
+
+```typescript
+coverage: {
+  thresholds: {
+    lines: 60,
+    branches: 70,
+    functions: 63,
+    statements: 60
+  }
+}
+```
+
+### Viewing Coverage
+
+```bash
+# Generate coverage report
+yarn test:coverage
+
+# View HTML coverage report
+open coverage/index.html
+```
+
+### Coverage Reports
+
+Generated in `coverage/` directory:
+- `index.html` - Interactive HTML report
+- `lcov.info` - LCOV format for CI tools
+- `coverage-summary.json` - JSON summary
+
+## Writing Tests
+
+### Test File Location
+
+Place test files next to the code they test:
+
+```
+packages/excalidraw/
+  components/
+    Button.tsx
+    Button.test.tsx          # Component test
+  utils/
+    geometry.ts
+    geometry.test.ts         # Utility test
+```
+
+Or in a `tests/` directory:
+
+```
+excalidraw-app/
+  tests/
+    collab.test.tsx
+    MobileMenu.test.tsx
+```
+
+### Test File Naming
+
+- `*.test.ts` - Unit tests for utilities
+- `*.test.tsx` - Component tests
+- `*.spec.ts` - Spec/integration tests
+- `__snapshots__/` - Snapshot files (auto-generated)
+
+### Basic Test Structure
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
+describe("Component or feature name", () => {
+  beforeEach(() => {
+    // Setup before each test
+  });
+
+  afterEach(() => {
+    // Cleanup after each test
+  });
+
+  it("should do something specific", () => {
+    // Arrange: Set up test data
+    const input = { x: 0, y: 0 };
+
+    // Act: Perform the action
+    const result = doSomething(input);
+
+    // Assert: Verify the result
+    expect(result).toBe(expected);
+  });
+
+  it("should handle edge case", () => {
+    // Test edge cases
+  });
+});
+```
+
+## Testing Patterns
+
+### Unit Testing Utilities
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { distance } from "./geometry";
+
+describe("distance", () => {
+  it("should calculate distance between two points", () => {
+    const point1 = { x: 0, y: 0 };
+    const point2 = { x: 3, y: 4 };
+
+    const result = distance(point1, point2);
+
+    expect(result).toBe(5);
+  });
+
+  it("should return 0 for same points", () => {
+    const point = { x: 5, y: 5 };
+
+    const result = distance(point, point);
+
+    expect(result).toBe(0);
+  });
+
+  it("should handle negative coordinates", () => {
+    const point1 = { x: -3, y: -4 };
+    const point2 = { x: 0, y: 0 };
+
+    const result = distance(point1, point2);
+
+    expect(result).toBe(5);
+  });
+});
+```
+
+### Testing React Components
+
+```typescript
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { Button } from "./Button";
+
+describe("Button", () => {
+  it("should render with label", () => {
+    render(<Button label="Click me" onClick={() => {}} />);
+
+    expect(screen.getByText("Click me")).toBeInTheDocument();
+  });
+
+  it("should call onClick when clicked", () => {
+    const handleClick = vi.fn();
+    render(<Button label="Click me" onClick={handleClick} />);
+
+    fireEvent.click(screen.getByText("Click me"));
+
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("should be disabled when disabled prop is true", () => {
+    render(<Button label="Click me" onClick={() => {}} disabled />);
+
+    expect(screen.getByRole("button")).toBeDisabled();
+  });
+});
+```
+
+### Testing with Jotai Atoms
+
+```typescript
+import { renderHook, act } from "@testing-library/react";
+import { useAtom } from "jotai";
+import { describe, it, expect } from "vitest";
+import { countAtom } from "./atoms";
+
+describe("countAtom", () => {
+  it("should initialize with 0", () => {
+    const { result } = renderHook(() => useAtom(countAtom));
+
+    expect(result.current[0]).toBe(0);
+  });
+
+  it("should update count", () => {
+    const { result } = renderHook(() => useAtom(countAtom));
+
+    act(() => {
+      result.current[1](5);
+    });
+
+    expect(result.current[0]).toBe(5);
+  });
+});
+```
+
+### Testing Async Code
+
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { waitFor } from "@testing-library/react";
+import { fetchUserData } from "./api";
+
+describe("fetchUserData", () => {
+  it("should fetch user data successfully", async () => {
+    const mockData = { id: 1, name: "John" };
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve(mockData),
+      } as Response),
+    );
+
+    const result = await fetchUserData(1);
+
+    expect(result).toEqual(mockData);
+    expect(fetch).toHaveBeenCalledWith("/api/users/1");
+  });
+
+  it("should handle errors", async () => {
+    global.fetch = vi.fn(() => Promise.reject("API error"));
+
+    await expect(fetchUserData(1)).rejects.toThrow("API error");
+  });
+});
+```
+
+### Snapshot Testing
+
+```typescript
+import { render } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { Toolbar } from "./Toolbar";
+
+describe("Toolbar", () => {
+  it("should match snapshot", () => {
+    const { container } = render(<Toolbar />);
+
+    expect(container).toMatchSnapshot();
+  });
+});
+```
+
+Update snapshots with:
+```bash
+yarn test:update
+```
+
+### Testing Canvas Operations
+
+Canvas operations are mocked by `vitest-canvas-mock`:
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { renderElement } from "./canvas";
+
+describe("renderElement", () => {
+  it("should draw rectangle on canvas", () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const element = {
+      type: "rectangle",
+      x: 10,
+      y: 20,
+      width: 100,
+      height: 50,
+    };
+
+    renderElement(ctx, element);
+
+    // Canvas mock records operations
+    const events = (ctx as any).__getEvents();
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "fillRect" }),
+    );
+  });
+});
+```
+
+## Mocking
+
+### Mocking Functions
+
+```typescript
+import { vi } from "vitest";
+
+// Create a mock function
+const mockFn = vi.fn();
+
+// Mock with return value
+const mockFn = vi.fn(() => "result");
+
+// Mock with implementation
+const mockFn = vi.fn((x) => x * 2);
+
+// Assertions
+expect(mockFn).toHaveBeenCalled();
+expect(mockFn).toHaveBeenCalledWith(arg1, arg2);
+expect(mockFn).toHaveBeenCalledTimes(3);
+expect(mockFn).toHaveReturnedWith("result");
+```
+
+### Mocking Modules
+
+```typescript
+import { vi } from "vitest";
+
+// Mock entire module
+vi.mock("./api", () => ({
+  fetchData: vi.fn(() => Promise.resolve({ data: "test" })),
+}));
+
+// Partial mock
+vi.mock("./utils", async () => {
+  const actual = await vi.importActual("./utils");
+  return {
+    ...actual,
+    specificFunction: vi.fn(),
+  };
+});
+```
+
+### Mocking Timers
+
+```typescript
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
+
+describe("debounced function", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should debounce calls", () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, 1000);
+
+    debounced();
+    debounced();
+    debounced();
+
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1000);
+
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+## Test Organization
+
+### Describe Blocks
+
+Group related tests:
+
+```typescript
+describe("Element transformations", () => {
+  describe("rotate", () => {
+    it("should rotate by 90 degrees", () => {});
+    it("should handle negative angles", () => {});
+  });
+
+  describe("scale", () => {
+    it("should scale uniformly", () => {});
+    it("should scale non-uniformly", () => {});
+  });
+});
+```
+
+### Setup and Teardown
+
+```typescript
+import { beforeEach, afterEach, beforeAll, afterAll } from "vitest";
+
+beforeAll(() => {
+  // Runs once before all tests in the file
+});
+
+afterAll(() => {
+  // Runs once after all tests in the file
+});
+
+beforeEach(() => {
+  // Runs before each test
+});
+
+afterEach(() => {
+  // Runs after each test
+});
+```
+
+## Testing Best Practices
+
+### Do's
+
+1. **Test Behavior, Not Implementation**: Focus on what code does, not how
+2. **Write Descriptive Test Names**: Use "should" statements
+3. **Follow AAA Pattern**: Arrange, Act, Assert
+4. **Test Edge Cases**: Include boundary conditions and error cases
+5. **Keep Tests Independent**: Each test should run in isolation
+6. **Use Meaningful Assertions**: Be specific about expected outcomes
+7. **Test User Interactions**: Simulate real user behavior
+8. **Mock External Dependencies**: Isolate the code under test
+
+### Don'ts
+
+1. **Don't Test Implementation Details**: Test the public API
+2. **Don't Write Brittle Tests**: Avoid testing exact HTML structure
+3. **Don't Skip Error Cases**: Always test error handling
+4. **Don't Test Third-Party Code**: Trust external libraries
+5. **Don't Use Magic Numbers**: Define constants for test data
+6. **Don't Share State Between Tests**: Reset state in hooks
+7. **Don't Over-Mock**: Mock only what's necessary
+
+## Debugging Tests
+
+### Run Tests in Debug Mode
+
+```bash
+# Run with Node debugger
+node --inspect-brk ./node_modules/.bin/vitest
+```
+
+### Use Test UI
+
+```bash
+yarn test:ui
+```
+
+Opens an interactive UI to:
+- Browse and run specific tests
+- View test results and coverage
+- Debug test failures
+
+### Console Logging
+
+```typescript
+it("should do something", () => {
+  const result = doSomething();
+  console.log("Result:", result); // Will show in test output
+  expect(result).toBe(expected);
+});
+```
+
+### Debug in VS Code
+
+Add to `.vscode/launch.json`:
+
+```json
+{
+  "type": "node",
+  "request": "launch",
+  "name": "Debug Tests",
+  "runtimeExecutable": "yarn",
+  "runtimeArgs": ["test", "--run", "--no-coverage"],
+  "console": "integratedTerminal"
+}
+```
+
+## Continuous Integration
+
+### Pre-commit Checks
+
+Tests run automatically via Husky pre-commit hook:
+
+```bash
+# Runs lint-staged which checks:
+# - ESLint for .js, .ts, .tsx files
+# - Prettier for .css, .scss, .json, .md, .html, .yml files
+```
+
+### Before Committing
+
+Always run before committing:
+
+```bash
+yarn fix              # Fix formatting and linting
+yarn test:typecheck   # Verify TypeScript types
+yarn test:update      # Run tests and update snapshots
+```
+
+### CI Workflow
+
+GitHub Actions runs these checks on PRs:
+
+1. **Type checking**: `yarn test:typecheck`
+2. **Linting**: `yarn test:code`
+3. **Formatting**: `yarn test:other`
+4. **Tests**: `yarn test:app --watch=false`
+5. **Coverage**: Uploads coverage reports
+
+## Common Testing Scenarios
+
+### Testing Element Operations
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { createElement, updateElement } from "./element";
+
+describe("Element operations", () => {
+  it("should create a rectangle element", () => {
+    const element = createElement("rectangle", { x: 0, y: 0 });
+
+    expect(element.type).toBe("rectangle");
+    expect(element.x).toBe(0);
+    expect(element.y).toBe(0);
+    expect(element.id).toBeDefined();
+  });
+
+  it("should update element properties", () => {
+    const element = createElement("rectangle", { x: 0, y: 0 });
+    const updated = updateElement(element, { x: 10, y: 20 });
+
+    expect(updated.x).toBe(10);
+    expect(updated.y).toBe(20);
+    expect(updated.id).toBe(element.id);
+  });
+});
+```
+
+### Testing Keyboard Shortcuts
+
+```typescript
+import { render, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { Editor } from "./Editor";
+
+describe("Keyboard shortcuts", () => {
+  it("should undo on Ctrl+Z", () => {
+    const onUndo = vi.fn();
+    render(<Editor onUndo={onUndo} />);
+
+    fireEvent.keyDown(document, { key: "z", ctrlKey: true });
+
+    expect(onUndo).toHaveBeenCalled();
+  });
+});
+```
+
+### Testing Collaboration Features
+
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { syncElements } from "./collab";
+
+describe("Collaboration", () => {
+  it("should sync elements to other clients", async () => {
+    const mockSocket = {
+      emit: vi.fn(),
+    };
+
+    const elements = [{ id: "1", type: "rectangle" }];
+    await syncElements(mockSocket, elements);
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "sync",
+      expect.objectContaining({ elements }),
+    );
+  });
+});
+```
+
+## Resources
+
+- [Vitest Documentation](https://vitest.dev/)
+- [Testing Library](https://testing-library.com/)
+- [Testing Best Practices](https://testingjavascript.com/)
+- [Kent C. Dodds Testing Blog](https://kentcdodds.com/blog/?q=testing)
+
+## Next Steps
+
+Now that you understand testing:
+
+1. Review the [Contribution Guidelines](/contributing/guidelines) for code standards
+2. Find an issue on the [roadmap](https://github.com/orgs/excalidraw/projects/3)
+3. Write tests for your changes before submitting PRs
+4. Join [Discord](https://discord.gg/UexuTaE) if you need help with testing

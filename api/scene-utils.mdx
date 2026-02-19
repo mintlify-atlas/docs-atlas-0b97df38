@@ -1,0 +1,588 @@
+---
+title: "Scene Utilities"
+description: "Functions for managing Excalidraw scenes and element collections"
+---
+
+# Scene Utilities
+
+Utilities for managing scenes, element collections, and scene state in Excalidraw.
+
+## Scene Class
+
+The `Scene` class is the core container for managing Excalidraw elements and their state.
+
+### Constructor
+
+Creates a new Scene instance.
+
+```typescript
+class Scene {
+  constructor(
+    elements?: ElementsMapOrArray | null,
+    options?: {
+      skipValidation?: true;
+    }
+  );
+}
+```
+
+<ParamField path="elements" type="ElementsMapOrArray | null">
+  Initial elements (array or Map)
+</ParamField>
+
+<ParamField path="options.skipValidation" type="boolean">
+  Skip validation of fractional indices
+</ParamField>
+
+**Example:**
+
+```typescript
+import { Scene } from "@excalidraw/excalidraw";
+
+const scene = new Scene([
+  /* elements */
+]);
+```
+
+### Scene Methods
+
+#### getElementsIncludingDeleted
+
+Returns all elements including deleted ones.
+
+```typescript
+getElementsIncludingDeleted(): readonly OrderedExcalidrawElement[]
+```
+
+<ResponseField name="elements" type="ExcalidrawElement[]">
+  All elements in the scene
+</ResponseField>
+
+#### getNonDeletedElements
+
+Returns only non-deleted elements.
+
+```typescript
+getNonDeletedElements(): readonly NonDeleted<ExcalidrawElement>[]
+```
+
+<ResponseField name="elements" type="NonDeleted<ExcalidrawElement>[]">
+  All non-deleted elements
+</ResponseField>
+
+#### getNonDeletedElementsMap
+
+Returns a Map of non-deleted elements indexed by ID.
+
+```typescript
+getNonDeletedElementsMap(): NonDeletedSceneElementsMap
+```
+
+<ResponseField name="map" type="Map<string, ExcalidrawElement>">
+  Map of element IDs to elements
+</ResponseField>
+
+**Example:**
+
+```typescript
+const elementsMap = scene.getNonDeletedElementsMap();
+const element = elementsMap.get("element-id-123");
+```
+
+#### getElement
+
+Gets a specific element by ID (including deleted).
+
+```typescript
+getElement<T extends ExcalidrawElement>(id: string): T | null
+```
+
+<ParamField path="id" type="string" required>
+  Element ID to retrieve
+</ParamField>
+
+<ResponseField name="element" type="ExcalidrawElement | null">
+  The element or null if not found
+</ResponseField>
+
+#### getNonDeletedElement
+
+Gets a non-deleted element by ID.
+
+```typescript
+getNonDeletedElement(id: string): NonDeleted<ExcalidrawElement> | null
+```
+
+<ParamField path="id" type="string" required>
+  Element ID to retrieve
+</ParamField>
+
+<ResponseField name="element" type="NonDeleted<ExcalidrawElement> | null">
+  The non-deleted element or null
+</ResponseField>
+
+#### getSelectedElements
+
+Returns currently selected elements.
+
+```typescript
+getSelectedElements(opts: {
+  selectedElementIds: AppState["selectedElementIds"];
+  elements?: ElementsMapOrArray;
+  includeBoundTextElement?: boolean;
+  includeElementsInFrames?: boolean;
+}): NonDeleted<ExcalidrawElement>[]
+```
+
+<ParamField path="opts.selectedElementIds" type="Map<string, true>" required>
+  Map of selected element IDs
+</ParamField>
+
+<ParamField path="opts.elements" type="ElementsMapOrArray">
+  Custom elements to use (defaults to scene elements)
+</ParamField>
+
+<ParamField path="opts.includeBoundTextElement" type="boolean">
+  Include text bound to selected containers
+</ParamField>
+
+<ParamField path="opts.includeElementsInFrames" type="boolean">
+  Include elements inside selected frames
+</ParamField>
+
+<ResponseField name="elements" type="NonDeleted<ExcalidrawElement>[]">
+  Selected elements
+</ResponseField>
+
+**Example:**
+
+```typescript
+const selectedElements = scene.getSelectedElements({
+  selectedElementIds: appState.selectedElementIds,
+  includeBoundTextElement: true,
+});
+```
+
+#### insertElement
+
+Inserts a single element into the scene.
+
+```typescript
+insertElement(element: ExcalidrawElement): void
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  Element to insert
+</ParamField>
+
+**Example:**
+
+```typescript
+import { newElement } from "@excalidraw/excalidraw";
+
+const rectangle = newElement({
+  type: "rectangle",
+  x: 100,
+  y: 100,
+  width: 200,
+  height: 150,
+});
+
+scene.insertElement(rectangle);
+```
+
+#### insertElements
+
+Inserts multiple elements into the scene.
+
+```typescript
+insertElements(elements: ExcalidrawElement[]): void
+```
+
+<ParamField path="elements" type="ExcalidrawElement[]" required>
+  Elements to insert
+</ParamField>
+
+#### insertElementAtIndex
+
+Inserts an element at a specific index in the z-order.
+
+```typescript
+insertElementAtIndex(element: ExcalidrawElement, index: number): void
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  Element to insert
+</ParamField>
+
+<ParamField path="index" type="number" required>
+  Z-index position (0 = bottom)
+</ParamField>
+
+#### replaceAllElements
+
+Replaces all elements in the scene.
+
+```typescript
+replaceAllElements(
+  elements: ElementsMapOrArray,
+  options?: { skipValidation?: true }
+): void
+```
+
+<ParamField path="elements" type="ElementsMapOrArray" required>
+  New elements (array or Map)
+</ParamField>
+
+<ParamField path="options.skipValidation" type="boolean">
+  Skip fractional index validation
+</ParamField>
+
+**Example:**
+
+```typescript
+scene.replaceAllElements(newElements);
+```
+
+#### mapElements
+
+Maps over all elements, optionally modifying them.
+
+```typescript
+mapElements(
+  iteratee: (element: ExcalidrawElement) => ExcalidrawElement
+): boolean
+```
+
+<ParamField path="iteratee" type="function" required>
+  Function that receives each element and returns the element (modified or unchanged)
+</ParamField>
+
+<ResponseField name="changed" type="boolean">
+  Whether any elements were modified
+</ResponseField>
+
+**Example:**
+
+```typescript
+// Move all elements 10px to the right
+scene.mapElements((element) => ({
+  ...element,
+  x: element.x + 10,
+}));
+```
+
+#### mutateElement
+
+Mutates a single element and triggers scene update.
+
+```typescript
+mutateElement<TElement extends ExcalidrawElement>(
+  element: TElement,
+  updates: ElementUpdate<TElement>,
+  options?: {
+    informMutation: boolean;
+    isDragging: boolean;
+  }
+): TElement
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  Element to mutate
+</ParamField>
+
+<ParamField path="updates" type="Partial<TElement>" required>
+  Properties to update
+</ParamField>
+
+<ParamField path="options.informMutation" type="boolean" default="true">
+  Whether to trigger scene update
+</ParamField>
+
+<ParamField path="options.isDragging" type="boolean" default="false">
+  Whether element is being dragged
+</ParamField>
+
+<ResponseField name="element" type="ExcalidrawElement">
+  The mutated element
+</ResponseField>
+
+**Example:**
+
+```typescript
+scene.mutateElement(element, {
+  x: 150,
+  y: 200,
+  backgroundColor: "#ff0000",
+});
+```
+
+#### getElementIndex
+
+Gets the z-index of an element.
+
+```typescript
+getElementIndex(elementId: string): number
+```
+
+<ParamField path="elementId" type="string" required>
+  Element ID
+</ParamField>
+
+<ResponseField name="index" type="number">
+  Z-index of the element (-1 if not found)
+</ResponseField>
+
+#### getContainerElement
+
+Gets the container element for a bound element.
+
+```typescript
+getContainerElement(
+  element: ExcalidrawElement & { containerId: string | null } | null
+): ExcalidrawElement | null
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  Element with containerId property
+</ParamField>
+
+<ResponseField name="container" type="ExcalidrawElement | null">
+  The container element or null
+</ResponseField>
+
+#### getSceneNonce
+
+Gets a random nonce that changes with each scene update.
+
+```typescript
+getSceneNonce(): number | undefined
+```
+
+<ResponseField name="nonce" type="number | undefined">
+  Random integer regenerated on each update
+</ResponseField>
+
+**Usage:** Used for cache invalidation in renderers.
+
+#### onUpdate
+
+Registers a callback for scene updates.
+
+```typescript
+onUpdate(callback: () => void): () => void
+```
+
+<ParamField path="callback" type="function" required>
+  Function to call on scene updates
+</ParamField>
+
+<ResponseField name="unsubscribe" type="function">
+  Function to unregister the callback
+</ResponseField>
+
+**Example:**
+
+```typescript
+const unsubscribe = scene.onUpdate(() => {
+  console.log("Scene updated!");
+  renderScene();
+});
+
+// Later: unsubscribe when no longer needed
+unsubscribe();
+```
+
+#### triggerUpdate
+
+Manually triggers scene update callbacks.
+
+```typescript
+triggerUpdate(): void
+```
+
+#### destroy
+
+Cleans up the scene and removes all elements.
+
+```typescript
+destroy(): void
+```
+
+**Example:**
+
+```typescript
+scene.destroy();
+```
+
+## Scene Version Functions
+
+### getSceneVersion
+
+Calculates scene version by summing element versions.
+
+```typescript
+function getSceneVersion(elements: readonly ExcalidrawElement[]): number
+```
+
+<ParamField path="elements" type="readonly ExcalidrawElement[]" required>
+  Elements to calculate version from
+</ParamField>
+
+<ResponseField name="version" type="number">
+  Sum of all element versions
+</ResponseField>
+
+**Note:** Deprecated in favor of `hashElementsVersion`.
+
+### hashElementsVersion
+
+Generates a hash of elements' versionNonce values.
+
+```typescript
+function hashElementsVersion(elements: ElementsMapOrArray): number
+```
+
+<ParamField path="elements" type="ElementsMapOrArray" required>
+  Elements to hash (array or Map)
+</ParamField>
+
+<ResponseField name="hash" type="number">
+  Unsigned 32-bit integer hash
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { hashElementsVersion } from "@excalidraw/excalidraw";
+
+const currentHash = hashElementsVersion(scene.getNonDeletedElements());
+if (currentHash !== previousHash) {
+  // Scene has changed
+  renderScene();
+}
+```
+
+## Complete Scene Example
+
+```typescript
+import {
+  Scene,
+  newElement,
+  newTextElement,
+  hashElementsVersion,
+} from "@excalidraw/excalidraw";
+
+class SceneManager {
+  private scene: Scene;
+  private lastHash: number = 0;
+
+  constructor() {
+    this.scene = new Scene();
+
+    // Listen for changes
+    this.scene.onUpdate(() => {
+      this.onSceneUpdate();
+    });
+  }
+
+  addRectangle(x: number, y: number, width: number, height: number) {
+    const rectangle = newElement({
+      type: "rectangle",
+      x,
+      y,
+      width,
+      height,
+      strokeColor: "#000000",
+      backgroundColor: "#ffffff",
+    });
+
+    this.scene.insertElement(rectangle);
+  }
+
+  addText(x: number, y: number, text: string) {
+    const textElement = newTextElement({
+      text,
+      x,
+      y,
+      fontSize: 20,
+    });
+
+    this.scene.insertElement(textElement);
+  }
+
+  moveSelectedElements(dx: number, dy: number, selectedIds: Set<string>) {
+    this.scene.mapElements((element) => {
+      if (selectedIds.has(element.id)) {
+        return {
+          ...element,
+          x: element.x + dx,
+          y: element.y + dy,
+        };
+      }
+      return element;
+    });
+  }
+
+  deleteSelectedElements(selectedIds: Set<string>) {
+    this.scene.mapElements((element) => {
+      if (selectedIds.has(element.id)) {
+        return {
+          ...element,
+          isDeleted: true,
+        };
+      }
+      return element;
+    });
+  }
+
+  onSceneUpdate() {
+    const currentHash = hashElementsVersion(
+      this.scene.getNonDeletedElements()
+    );
+
+    if (currentHash !== this.lastHash) {
+      console.log("Scene changed, re-rendering...");
+      this.lastHash = currentHash;
+      this.render();
+    }
+  }
+
+  render() {
+    const elements = this.scene.getNonDeletedElements();
+    console.log(`Rendering ${elements.length} elements`);
+    // Render logic here
+  }
+
+  getElements() {
+    return this.scene.getNonDeletedElements();
+  }
+
+  getElementById(id: string) {
+    return this.scene.getNonDeletedElement(id);
+  }
+
+  clear() {
+    this.scene.replaceAllElements([]);
+  }
+
+  destroy() {
+    this.scene.destroy();
+  }
+}
+
+// Usage
+const manager = new SceneManager();
+
+manager.addRectangle(100, 100, 200, 150);
+manager.addText(150, 175, "Hello World");
+
+const elements = manager.getElements();
+console.log(`Total elements: ${elements.length}`);
+```
+
+## See Also
+
+- [Element Utils](/api/element-utils) - Creating and manipulating elements
+- [Export Utils](/api/export-utils) - Exporting scenes
+- [Restore Utils](/api/restore-utils) - Loading and restoring data

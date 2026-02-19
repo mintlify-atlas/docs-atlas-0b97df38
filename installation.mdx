@@ -1,0 +1,378 @@
+---
+title: Installation
+description: Install Excalidraw in your project and configure it for production use
+---
+
+## Package Installation
+
+<Steps>
+  <Step title="Install via npm, yarn, or pnpm">
+    Excalidraw requires React and React DOM as peer dependencies. Install the package using your preferred package manager:
+
+    <CodeGroup>
+      ```bash npm
+      npm install react react-dom @excalidraw/excalidraw
+      ```
+
+      ```bash yarn
+      yarn add react react-dom @excalidraw/excalidraw
+      ```
+
+      ```bash pnpm
+      pnpm add react react-dom @excalidraw/excalidraw
+      ```
+    </CodeGroup>
+
+    <Note>
+      **React Version Support**: Excalidraw supports React 17, 18, and 19. The package is compatible with `react@^17.0.2 || ^18.2.0 || ^19.0.0`.
+    </Note>
+  </Step>
+
+  <Step title="Import Excalidraw and styles">
+    Import the Excalidraw component and its required CSS file in your application:
+
+    ```tsx
+    import { Excalidraw } from "@excalidraw/excalidraw";
+    import "@excalidraw/excalidraw/index.css";
+    ```
+  </Step>
+
+  <Step title="Add the component to your app">
+    Add Excalidraw to your component. Make sure the parent container has explicit dimensions:
+
+    ```tsx
+    export default function App() {
+      return (
+        <div style={{ height: "500px", width: "100%" }}>
+          <Excalidraw />
+        </div>
+      );
+    }
+    ```
+
+    <Warning>
+      **Container Dimensions Required**: Excalidraw takes 100% of the width and height of its containing block. Ensure the parent element has non-zero dimensions, or the canvas will not be visible.
+    </Warning>
+  </Step>
+</Steps>
+
+## Framework-Specific Setup
+
+### Next.js
+
+Next.js requires dynamic imports with SSR disabled to avoid hydration issues.
+
+<Steps>
+  <Step title="Create a wrapper component">
+    Create a client component that imports Excalidraw:
+
+    ```tsx excalidrawWrapper.tsx
+    "use client";
+    import { Excalidraw } from "@excalidraw/excalidraw";
+    import "@excalidraw/excalidraw/index.css";
+
+    const ExcalidrawWrapper = () => {
+      return <Excalidraw />;
+    };
+
+    export default ExcalidrawWrapper;
+    ```
+  </Step>
+
+  <Step title="Import with dynamic loading">
+    In your page component, use Next.js dynamic imports with `ssr: false`:
+
+    <Tabs>
+      <Tab title="App Router">
+        ```tsx app/page.tsx
+        import dynamic from "next/dynamic";
+        import Script from "next/script";
+
+        const ExcalidrawWithClientOnly = dynamic(
+          async () => (await import("../excalidrawWrapper")).default,
+          {
+            ssr: false,
+          },
+        );
+
+        export default function Page() {
+          return (
+            <>
+              <Script id="load-env-variables" strategy="beforeInteractive">
+                {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
+              </Script>
+              <div style={{ height: "100vh" }}>
+                <ExcalidrawWithClientOnly />
+              </div>
+            </>
+          );
+        }
+        ```
+      </Tab>
+
+      <Tab title="Pages Router">
+        ```tsx pages/excalidraw.tsx
+        import dynamic from "next/dynamic";
+        import Script from "next/script";
+
+        const Excalidraw = dynamic(
+          () => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw),
+          { ssr: false }
+        );
+
+        export default function ExcalidrawPage() {
+          return (
+            <>
+              <Script id="load-env-variables" strategy="beforeInteractive">
+                {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
+              </Script>
+              <div style={{ height: "100vh" }}>
+                <Excalidraw />
+              </div>
+            </>
+          );
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+### Vite
+
+Vite works out of the box with Excalidraw. Simply import and use:
+
+```tsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Create React App
+
+Create React App also works without additional configuration:
+
+```tsx
+import React from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Self-Hosting Fonts
+
+For production deployments, you should self-host Excalidraw fonts instead of loading them from a CDN.
+
+<Steps>
+  <Step title="Copy font files to your public directory">
+    Copy the fonts from `node_modules/@excalidraw/excalidraw/dist/prod/fonts` to your public directory:
+
+    ```bash
+    cp -r node_modules/@excalidraw/excalidraw/dist/prod/fonts public/fonts
+    ```
+
+    <Note>
+      The fonts directory includes all font families used by Excalidraw: Virgil (hand-drawn style), Cascadia, Assistant, and more.
+    </Note>
+  </Step>
+
+  <Step title="Set the asset path">
+    Configure `window.EXCALIDRAW_ASSET_PATH` to point to your public directory where fonts are hosted:
+
+    **In HTML:**
+    ```html
+    <script>
+      window.EXCALIDRAW_ASSET_PATH = "/";
+    </script>
+    ```
+
+    **In Next.js:**
+    ```tsx
+    import Script from "next/script";
+
+    export default function Page() {
+      return (
+        <>
+          <Script id="load-env-variables" strategy="beforeInteractive">
+            {`window.EXCALIDRAW_ASSET_PATH = window.origin;`}
+          </Script>
+          {/* Your Excalidraw component */}
+        </>
+      );
+    }
+    ```
+
+    **In React:**
+    ```tsx
+    useEffect(() => {
+      window.EXCALIDRAW_ASSET_PATH = "/";
+    }, []);
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  If you don't set `EXCALIDRAW_ASSET_PATH`, Excalidraw will attempt to load fonts from the CDN at `https://esm.run/@excalidraw/excalidraw/dist/prod/`. This works fine for development but may cause issues in production or offline environments.
+</Tip>
+
+## Browser Compatibility
+
+Excalidraw supports modern browsers with the following minimum versions:
+
+<CardGroup cols={2}>
+  <Card title="Chrome / Edge" icon="chrome">
+    Version 70+
+  </Card>
+  <Card title="Firefox" icon="firefox">
+    Latest version
+  </Card>
+  <Card title="Safari" icon="safari">
+    Version 12+
+  </Card>
+  <Card title="Mobile Browsers" icon="mobile">
+    Safari iOS 12+, Chrome Android
+  </Card>
+</CardGroup>
+
+**Not supported:**
+- Internet Explorer (any version)
+- Opera Mini
+- UC Browser < 13
+- Samsung Internet < 10
+- KaiOS ≤ 2.5
+
+## TypeScript Support
+
+Excalidraw is written in TypeScript and includes full type definitions. No additional `@types` packages are needed.
+
+```tsx
+import type {
+  ExcalidrawImperativeAPI,
+  ExcalidrawProps,
+  NonDeletedExcalidrawElement,
+  AppState,
+} from "@excalidraw/excalidraw/types";
+
+const MyComponent = () => {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  return (
+    <Excalidraw
+      excalidrawAPI={(api) => setExcalidrawAPI(api)}
+      onChange={(elements: readonly NonDeletedExcalidrawElement[], state: AppState) => {
+        console.log("Elements:", elements);
+      }}
+    />
+  );
+};
+```
+
+### Available Type Exports
+
+Import types from the appropriate subpackages:
+
+```tsx
+// Core types
+import type { ExcalidrawProps, AppState } from "@excalidraw/excalidraw/types";
+
+// Element types
+import type { 
+  ExcalidrawElement, 
+  NonDeletedExcalidrawElement,
+  FileId 
+} from "@excalidraw/excalidraw/element/types";
+
+// Data types
+import type { ImportedLibraryData } from "@excalidraw/excalidraw/data/types";
+```
+
+## Additional Packages
+
+Excalidraw exports additional utility packages for advanced use cases:
+
+<AccordionGroup>
+  <Accordion title="@excalidraw/common">
+    Common utilities and constants:
+
+    ```tsx
+    import { THEME, MIME_TYPES, normalizeLink } from "@excalidraw/common";
+    ```
+  </Accordion>
+
+  <Accordion title="@excalidraw/element">
+    Element manipulation utilities:
+
+    ```tsx
+    import { 
+      mutateElement, 
+      newElementWith,
+      getSceneVersion,
+      getNonDeletedElements 
+    } from "@excalidraw/element";
+    ```
+  </Accordion>
+
+  <Accordion title="@excalidraw/math">
+    Mathematical utilities for geometry calculations:
+
+    ```tsx
+    import { rotatePoint, getDistance } from "@excalidraw/math";
+    ```
+  </Accordion>
+
+  <Accordion title="@excalidraw/utils">
+    Export and utility functions:
+
+    ```tsx
+    import { exportToCanvas, exportToSvg, exportToBlob } from "@excalidraw/utils/export";
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Using the Latest (Unreleased) Version
+
+To try unreleased features and bug fixes before the next stable release:
+
+```bash
+npm install @excalidraw/excalidraw@next
+```
+
+<Warning>
+  The `@next` tag includes unreleased changes that may be unstable. Only use this in development or if you need a specific fix that hasn't been released yet.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get drawing in 5 minutes with our quick start guide
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/props">
+    Explore all available props and methods
+  </Card>
+  <Card title="Examples" icon="flask" href="/examples/basic-usage">
+    See real-world integration examples
+  </Card>
+  <Card title="Customization" icon="palette" href="/customization/ui-options">
+    Learn how to customize the UI and theme
+  </Card>
+</CardGroup>

@@ -1,0 +1,390 @@
+---
+title: "Theming"
+description: "Customize Excalidraw's visual appearance with theme configuration"
+---
+
+## Overview
+
+Excalidraw supports light and dark themes out of the box. You can control the theme programmatically or let users toggle between themes.
+
+## Theme Basics
+
+### Available Themes
+
+Excalidraw provides two built-in themes:
+
+- `light` - Light color scheme optimized for bright environments
+- `dark` - Dark color scheme optimized for low-light environments
+
+```jsx
+import { Excalidraw, THEME } from "@excalidraw/excalidraw";
+
+// THEME constants from @excalidraw/common
+console.log(THEME.LIGHT); // "light"
+console.log(THEME.DARK);  // "dark"
+```
+
+### Setting the Theme
+
+<Steps>
+  <Step title="Import Excalidraw">
+    ```jsx
+    import { Excalidraw } from "@excalidraw/excalidraw";
+    ```
+  </Step>
+  
+  <Step title="Pass the theme prop">
+    ```jsx
+    function App() {
+      return <Excalidraw theme="dark" />;
+    }
+    ```
+  </Step>
+  
+  <Step title="Optional: Enable theme toggle">
+    Omit the `theme` prop to show the theme toggle button:
+    ```jsx
+    function App() {
+      return <Excalidraw />;
+    }
+    ```
+  </Step>
+</Steps>
+
+## Dynamic Theme Switching
+
+### User-Controlled Theme
+
+Let users switch between themes:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [theme, setTheme] = useState("light");
+
+  return (
+    <>
+      <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <Excalidraw theme={theme} />
+    </>
+  );
+}
+```
+
+### System Theme Detection
+
+Sync with the user's system theme preference:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    // Detect system theme preference
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setTheme(mediaQuery.matches ? "dark" : "light");
+
+    // Listen for theme changes
+    const handler = (e) => setTheme(e.matches ? "dark" : "light");
+    mediaQuery.addEventListener("change", handler);
+
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
+
+  return <Excalidraw theme={theme} />;
+}
+```
+
+### Persisting Theme Preference
+
+Save the user's theme choice:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [theme, setTheme] = useState(() => {
+    // Load from localStorage
+    return localStorage.getItem("excalidraw-theme") || "light";
+  });
+
+  useEffect(() => {
+    // Save to localStorage when theme changes
+    localStorage.setItem("excalidraw-theme", theme);
+  }, [theme]);
+
+  return (
+    <>
+      <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+        Toggle Theme
+      </button>
+      <Excalidraw theme={theme} />
+    </>
+  );
+}
+```
+
+## Theme Toggle Button
+
+### Automatic Toggle
+
+When you don't pass the `theme` prop, Excalidraw shows a built-in theme toggle:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  // No theme prop = automatic theme toggle button
+  return <Excalidraw />;
+}
+```
+
+<Note>
+From the source code at `packages/excalidraw/index.tsx:82-87`, when `UIOptions.canvasActions.toggleTheme` is `null` and `theme` is `undefined`, the toggle button is automatically enabled.
+</Note>
+
+### Disabling the Toggle
+
+Explicitly disable the theme toggle button:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      UIOptions={{
+        canvasActions: {
+          toggleTheme: false, // Disable toggle button
+        },
+      }}
+    />
+  );
+}
+```
+
+## Export with Theme
+
+### Dark Mode Export
+
+Control the theme used when exporting:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const exportWithDarkMode = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    
+    // Update app state to export with dark mode
+    await excalidrawAPI.updateScene({
+      appState: {
+        ...appState,
+        exportWithDarkMode: true,
+      },
+    });
+  };
+
+  return (
+    <>
+      <button onClick={exportWithDarkMode}>
+        Export with Dark Theme
+      </button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+The `exportWithDarkMode` flag in `AppState` controls whether exports use dark theme styling, independent of the current editor theme.
+</Tip>
+
+## Theme and App State
+
+### Initial Theme in AppState
+
+Set the initial theme through `initialData`:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      initialData={{
+        appState: {
+          theme: "dark",
+        },
+      }}
+    />
+  );
+}
+```
+
+<Warning>
+When both the `theme` prop and `initialData.appState.theme` are provided, the `theme` prop takes precedence.
+</Warning>
+
+### Tracking Theme Changes
+
+Monitor theme changes with the `onChange` callback:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleChange = (elements, appState) => {
+    console.log("Current theme:", appState.theme);
+  };
+
+  return <Excalidraw onChange={handleChange} />;
+}
+```
+
+## Internationalization and Theme
+
+### RTL Support with Themes
+
+Excalidraw automatically handles right-to-left (RTL) languages with themes:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      theme="dark"
+      langCode="ar-SA" // Arabic (RTL)
+    />
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/i18n.ts:92-95`, when setting a language, Excalidraw automatically sets `document.documentElement.dir` to `"rtl"` or `"ltr"` based on the language's RTL property.
+</Note>
+
+## Advanced Theming
+
+### Custom Background Colors
+
+Customize the view background color:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      initialData={{
+        appState: {
+          viewBackgroundColor: "#1e1e1e",
+        },
+      }}
+    />
+  );
+}
+```
+
+### Theme-Aware Components
+
+Create custom UI components that adapt to the theme:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [currentTheme, setCurrentTheme] = useState("light");
+
+  return (
+    <Excalidraw
+      theme={currentTheme}
+      renderTopRightUI={() => (
+        <div
+          style={{
+            padding: "10px",
+            background: currentTheme === "dark" ? "#1e1e1e" : "#ffffff",
+            color: currentTheme === "dark" ? "#ffffff" : "#000000",
+          }}
+        >
+          <button onClick={() => setCurrentTheme(currentTheme === "light" ? "dark" : "light")}>
+            Toggle Theme
+          </button>
+        </div>
+      )}
+    />
+  );
+}
+```
+
+## Theme Constants
+
+### Using Theme Enums
+
+Import theme constants from Excalidraw:
+
+```jsx
+import { Excalidraw, THEME } from "@excalidraw/excalidraw";
+
+function App() {
+  return <Excalidraw theme={THEME.DARK} />;
+}
+```
+
+Available from `@excalidraw/common`:
+- `THEME.LIGHT` - "light"
+- `THEME.DARK` - "dark"
+
+## Best Practices
+
+<Steps>
+  <Step title="Default to system preference">
+    Respect the user's system theme preference by default.
+  </Step>
+  
+  <Step title="Persist user choice">
+    Save the user's theme preference to localStorage.
+  </Step>
+  
+  <Step title="Smooth transitions">
+    Add CSS transitions for a smooth theme switching experience.
+  </Step>
+  
+  <Step title="Test both themes">
+    Ensure your custom UI components work well in both light and dark themes.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="sliders" href="/guides/customization">
+    Learn about other customization options
+  </Card>
+  <Card title="i18n" icon="language" href="/guides/i18n">
+    Add internationalization support
+  </Card>
+  <Card title="Export" icon="download" href="/guides/export">
+    Export with theme settings
+  </Card>
+  <Card title="Storage" icon="database" href="/guides/storage">
+    Persist theme preferences
+  </Card>
+</CardGroup>

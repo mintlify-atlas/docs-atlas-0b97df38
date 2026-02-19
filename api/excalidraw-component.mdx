@@ -1,0 +1,968 @@
+---
+title: "Excalidraw Component API"
+description: "Complete API reference for the Excalidraw React component with all props and methods"
+---
+
+# Excalidraw Component API
+
+The `Excalidraw` component is the main React component that renders the complete Excalidraw editor. This page provides a comprehensive API reference for all available props, callbacks, and imperative API methods.
+
+## Import
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+```
+
+## Props Reference
+
+### Core Props
+
+<ParamField path="onChange" type="function">
+  Callback fired when elements, appState, or files change. This is the primary way to track changes to the scene.
+  
+  ```typescript
+  onChange?: (
+    elements: readonly OrderedExcalidrawElement[],
+    appState: AppState,
+    files: BinaryFiles,
+  ) => void;
+  ```
+  
+  **Parameters:**
+  - `elements` - Array of all elements in the scene (ordered by z-index)
+  - `appState` - Current application state
+  - `files` - Binary files (images) used in the scene
+</ParamField>
+
+<ParamField path="onIncrement" type="function">
+  Called on every state increment, both durable (user actions) and ephemeral (temporary states like dragging).
+  
+  ```typescript
+  onIncrement?: (event: DurableIncrement | EphemeralIncrement) => void;
+  ```
+  
+  Use this for fine-grained change tracking or implementing custom undo/redo.
+</ParamField>
+
+<ParamField path="initialData" type="object | function | Promise">
+  Initial scene data to load when the component mounts. Can be an object, function, or Promise.
+  
+  ```typescript
+  initialData?:
+    | (() => MaybePromise<ExcalidrawInitialDataState | null>)
+    | MaybePromise<ExcalidrawInitialDataState | null>;
+  ```
+  
+  **ExcalidrawInitialDataState structure:**
+  ```typescript
+  {
+    elements?: ExcalidrawElement[];
+    appState?: Partial<AppState>;
+    scrollToContent?: boolean;
+    libraryItems?: LibraryItems;
+    files?: BinaryFiles;
+  }
+  ```
+</ParamField>
+
+<ParamField path="excalidrawAPI" type="function">
+  Callback to receive the Excalidraw imperative API instance. Use this to programmatically control the editor.
+  
+  ```typescript
+  excalidrawAPI?: (api: ExcalidrawImperativeAPI) => void;
+  ```
+  
+  See [Imperative API](#imperative-api) section below for available methods.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode">
+  Custom components to render inside Excalidraw. Can include `MainMenu`, `WelcomeScreen`, `Footer`, `Sidebar`, or any custom React components.
+  
+  ```typescript
+  children?: React.ReactNode;
+  ```
+</ParamField>
+
+### Appearance Props
+
+<ParamField path="theme" type="'light' | 'dark'">
+  Sets the editor theme. When not provided, users can toggle between themes using the theme button.
+  
+  ```typescript
+  theme?: Theme; // "light" | "dark"
+  ```
+</ParamField>
+
+<ParamField path="viewModeEnabled" type="boolean" default="false">
+  When `true`, renders the editor in view-only mode with no editing capabilities. Useful for displaying existing diagrams.
+  
+  ```typescript
+  viewModeEnabled?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="zenModeEnabled" type="boolean" default="false">
+  When `true`, hides the UI chrome (toolbars, menus) for a distraction-free experience. Users can still toggle this manually.
+  
+  ```typescript
+  zenModeEnabled?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="gridModeEnabled" type="boolean" default="false">
+  When `true`, shows a grid on the canvas. Elements can snap to grid when this is enabled.
+  
+  ```typescript
+  gridModeEnabled?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="objectsSnapModeEnabled" type="boolean">
+  When `true`, enables snapping to other objects on the canvas.
+  
+  ```typescript
+  objectsSnapModeEnabled?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="name" type="string">
+  Name of the document/scene. Used as the default filename when exporting.
+  
+  ```typescript
+  name?: string;
+  ```
+</ParamField>
+
+### Behavior Props
+
+<ParamField path="autoFocus" type="boolean" default="false">
+  When `true`, automatically focuses the canvas on mount, enabling immediate keyboard interaction.
+  
+  ```typescript
+  autoFocus?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="detectScroll" type="boolean" default="true">
+  When `true`, detects scrolling outside the canvas to prevent accidental page scrolls.
+  
+  ```typescript
+  detectScroll?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="handleKeyboardGlobally" type="boolean" default="false">
+  When `true`, keyboard shortcuts work globally instead of only when canvas is focused.
+  
+  ```typescript
+  handleKeyboardGlobally?: boolean;
+  ```
+  
+  <Warning>Use with caution as this may interfere with other keyboard interactions on the page.</Warning>
+</ParamField>
+
+<ParamField path="renderScrollbars" type="boolean">
+  Controls whether to render scrollbars on the canvas. By default, scrollbars are rendered.
+  
+  ```typescript
+  renderScrollbars?: boolean;
+  ```
+</ParamField>
+
+### Collaboration Props
+
+<ParamField path="isCollaborating" type="boolean" default="false">
+  Indicates whether the editor is in collaboration mode. This affects UI elements and behavior.
+  
+  ```typescript
+  isCollaborating?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="onPointerUpdate" type="function">
+  Callback fired when the user's pointer position changes. Essential for implementing real-time collaboration.
+  
+  ```typescript
+  onPointerUpdate?: (payload: {
+    pointer: { x: number; y: number; tool: "pointer" | "laser" };
+    button: "down" | "up";
+    pointersMap: Gesture["pointers"];
+  }) => void;
+  ```
+  
+  **Payload:**
+  - `pointer.x`, `pointer.y` - Scene coordinates of the pointer
+  - `pointer.tool` - Current tool ("pointer" or "laser")
+  - `button` - Mouse button state
+  - `pointersMap` - Map of all active pointers (for multi-touch)
+</ParamField>
+
+### Event Callbacks
+
+<ParamField path="onPaste" type="function">
+  Called when paste is triggered. Return `true` to prevent the default paste behavior.
+  
+  ```typescript
+  onPaste?: (
+    data: ClipboardData,
+    event: ClipboardEvent | null,
+  ) => Promise<boolean> | boolean;
+  ```
+  
+  **ClipboardData structure:**
+  - `text` - Plain text from clipboard
+  - `elements` - Excalidraw elements if pasting from another Excalidraw instance
+  - `files` - File objects if pasting images
+</ParamField>
+
+<ParamField path="onDuplicate" type="function">
+  Called when elements are duplicated via mouse-drag, keyboard, paste, or library insert. Return modified elements to override the default duplication behavior.
+  
+  ```typescript
+  onDuplicate?: (
+    nextElements: readonly ExcalidrawElement[],
+    prevElements: readonly ExcalidrawElement[],
+  ) => ExcalidrawElement[] | void;
+  ```
+  
+  **Parameters:**
+  - `nextElements` - All elements including the duplicates
+  - `prevElements` - Elements before duplication (excludes duplicated elements)
+  
+  <Note>You should return all elements (including deleted ones) if making changes. Do not mutate elements directly.</Note>
+</ParamField>
+
+<ParamField path="onPointerDown" type="function">
+  Called on pointer down events.
+  
+  ```typescript
+  onPointerDown?: (
+    activeTool: AppState["activeTool"],
+    pointerDownState: PointerDownState,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="onPointerUp" type="function">
+  Called on pointer up events.
+  
+  ```typescript
+  onPointerUp?: (
+    activeTool: AppState["activeTool"],
+    pointerDownState: PointerDownState,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="onScrollChange" type="function">
+  Called when the canvas scroll position or zoom level changes.
+  
+  ```typescript
+  onScrollChange?: (scrollX: number, scrollY: number, zoom: Zoom) => void;
+  ```
+  
+  **Parameters:**
+  - `scrollX` - Horizontal scroll position
+  - `scrollY` - Vertical scroll position
+  - `zoom` - Zoom object with `value` property
+</ParamField>
+
+<ParamField path="onUserFollow" type="function">
+  Called when the current user follows or unfollows a collaborator.
+  
+  ```typescript
+  onUserFollow?: (payload: OnUserFollowedPayload) => void;
+  ```
+  
+  **OnUserFollowedPayload:**
+  ```typescript
+  {
+    userToFollow: UserToFollow;
+    action: "FOLLOW" | "UNFOLLOW";
+  }
+  ```
+</ParamField>
+
+### Library & File Management
+
+<ParamField path="onLibraryChange" type="function">
+  Called when the library items change (add, remove, update).
+  
+  ```typescript
+  onLibraryChange?: (libraryItems: LibraryItems) => void | Promise<any>;
+  ```
+  
+  Use this to persist library items to your backend or local storage.
+</ParamField>
+
+<ParamField path="generateIdForFile" type="function">
+  Custom function to generate IDs for uploaded files. If not provided, Excalidraw generates random IDs.
+  
+  ```typescript
+  generateIdForFile?: (file: File) => string | Promise<string>;
+  ```
+  
+  Useful when you need deterministic file IDs or want to integrate with your storage system.
+</ParamField>
+
+<ParamField path="libraryReturnUrl" type="string">
+  URL to return to after opening the public library. Used in the libraries.excalidraw.com integration.
+  
+  ```typescript
+  libraryReturnUrl?: string;
+  ```
+</ParamField>
+
+### Link Handling
+
+<ParamField path="onLinkOpen" type="function">
+  Called when a link element is clicked. Use this to handle link clicks with custom logic.
+  
+  ```typescript
+  onLinkOpen?: (
+    element: NonDeletedExcalidrawElement,
+    event: CustomEvent<{
+      nativeEvent: MouseEvent | React.PointerEvent<HTMLCanvasElement>;
+    }>,
+  ) => void;
+  ```
+  
+  If provided, default link opening behavior is disabled.
+</ParamField>
+
+<ParamField path="generateLinkForSelection" type="function">
+  Generate a custom link for selected element(s). This enables users to create shareable links to specific elements or groups.
+  
+  ```typescript
+  generateLinkForSelection?: (id: string, type: "element" | "group") => string;
+  ```
+  
+  **Parameters:**
+  - `id` - Element ID or group ID
+  - `type` - Whether it's a single element or a group
+</ParamField>
+
+### Embedding
+
+<ParamField path="validateEmbeddable" type="boolean | string[] | RegExp | RegExp[] | function">
+  Controls which URLs can be embedded as iframe elements.
+  
+  ```typescript
+  validateEmbeddable?:
+    | boolean
+    | string[]
+    | RegExp
+    | RegExp[]
+    | ((link: string) => boolean | undefined);
+  ```
+  
+  **Options:**
+  - `true` - Allow all embeds
+  - `false` - Disable all embeds
+  - `string[]` - Array of allowed domains (e.g., `["youtube.com", "twitter.com"]`)
+  - `RegExp` or `RegExp[]` - Regex pattern(s) for allowed URLs
+  - `function` - Custom validation function
+  
+  <Warning>Be cautious when allowing embeds as they can pose security risks.</Warning>
+</ParamField>
+
+<ParamField path="renderEmbeddable" type="function">
+  Custom renderer for embeddable elements. Override the default iframe rendering.
+  
+  ```typescript
+  renderEmbeddable?: (
+    element: NonDeleted<ExcalidrawEmbeddableElement>,
+    appState: AppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+### Custom UI Rendering
+
+<ParamField path="renderTopLeftUI" type="function">
+  Render custom UI in the top-left corner of the editor (above the toolbar).
+  
+  ```typescript
+  renderTopLeftUI?: (
+    isMobile: boolean,
+    appState: UIAppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+<ParamField path="renderTopRightUI" type="function">
+  Render custom UI in the top-right corner of the editor.
+  
+  ```typescript
+  renderTopRightUI?: (
+    isMobile: boolean,
+    appState: UIAppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+<ParamField path="renderCustomStats" type="function">
+  Render custom content in the statistics panel (shown when elements are selected).
+  
+  ```typescript
+  renderCustomStats?: (
+    elements: readonly NonDeletedExcalidrawElement[],
+    appState: UIAppState,
+  ) => JSX.Element;
+  ```
+</ParamField>
+
+### UI Configuration
+
+<ParamField path="UIOptions" type="object">
+  Configure which UI elements are displayed and their behavior.
+  
+  ```typescript
+  UIOptions?: {
+    dockedSidebarBreakpoint?: number;
+    canvasActions?: CanvasActions;
+    tools?: {
+      image?: boolean;
+    };
+    getFormFactor?: (
+      editorWidth: number,
+      editorHeight: number,
+    ) => "desktop" | "tablet" | "phone";
+  };
+  ```
+</ParamField>
+
+<ParamField path="UIOptions.dockedSidebarBreakpoint" type="number">
+  Minimum editor width in pixels before sidebars can be docked. Below this width, sidebars always render as overlays.
+  
+  ```typescript
+  dockedSidebarBreakpoint?: number;
+  ```
+</ParamField>
+
+<ParamField path="UIOptions.canvasActions" type="object">
+  Control visibility of canvas action buttons in the menu.
+  
+  ```typescript
+  canvasActions?: {
+    changeViewBackgroundColor?: boolean;
+    clearCanvas?: boolean;
+    export?: false | ExportOpts;
+    loadScene?: boolean;
+    saveToActiveFile?: boolean;
+    toggleTheme?: boolean | null;
+    saveAsImage?: boolean;
+  };
+  ```
+  
+  **ExportOpts:**
+  ```typescript
+  {
+    saveFileToDisk?: boolean;
+    onExportToBackend?: (
+      exportedElements: readonly NonDeletedExcalidrawElement[],
+      appState: UIAppState,
+      files: BinaryFiles,
+    ) => void;
+    renderCustomUI?: (
+      exportedElements: readonly NonDeletedExcalidrawElement[],
+      appState: UIAppState,
+      files: BinaryFiles,
+      canvas: HTMLCanvasElement,
+    ) => JSX.Element;
+  }
+  ```
+</ParamField>
+
+<ParamField path="UIOptions.tools.image" type="boolean" default="true">
+  When `false`, hides the image tool from the toolbar.
+  
+  ```typescript
+  tools?: {
+    image?: boolean;
+  };
+  ```
+</ParamField>
+
+<ParamField path="UIOptions.getFormFactor" type="function">
+  Custom function to determine the editor's form factor. This affects UI layout and behavior.
+  
+  ```typescript
+  getFormFactor?: (
+    editorWidth: number,
+    editorHeight: number,
+  ) => "desktop" | "tablet" | "phone";
+  ```
+  
+  If not provided, Excalidraw determines this automatically based on viewport size.
+</ParamField>
+
+### Advanced Props
+
+<ParamField path="langCode" type="string" default="en">
+  Language code for internationalization. Supported languages include: en, es, fr, de, pt, ru, zh, ja, ko, ar, hi, it, nl, pl, tr, vi, and more.
+  
+  ```typescript
+  langCode?: Language["code"];
+  ```
+</ParamField>
+
+<ParamField path="aiEnabled" type="boolean" default="true">
+  When `false`, disables AI features like text-to-diagram and mermaid-to-diagram.
+  
+  ```typescript
+  aiEnabled?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="showDeprecatedFonts" type="boolean">
+  When `true`, shows deprecated font options in the font family selector.
+  
+  ```typescript
+  showDeprecatedFonts?: boolean;
+  ```
+</ParamField>
+
+## Imperative API
+
+The imperative API is provided via the `excalidrawAPI` prop callback:
+
+```jsx
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  return (
+    <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+  );
+}
+```
+
+### Scene Methods
+
+<ParamField path="updateScene" type="function">
+  Update elements and/or app state.
+  
+  ```typescript
+  updateScene: (sceneData: {
+    elements?: readonly ExcalidrawElement[];
+    appState?: Partial<AppState>;
+    collaborators?: Map<SocketId, Collaborator>;
+    captureUpdate?: CaptureUpdateActionType;
+  }) => void;
+  ```
+</ParamField>
+
+<ParamField path="resetScene" type="function">
+  Clear the canvas and reset state.
+  
+  ```typescript
+  resetScene: (opts?: {
+    resetScroll?: boolean;
+    resetZoom?: boolean;
+  }) => void;
+  ```
+</ParamField>
+
+<ParamField path="getSceneElements" type="function">
+  Get current non-deleted elements.
+  
+  ```typescript
+  getSceneElements: () => readonly NonDeletedExcalidrawElement[];
+  ```
+</ParamField>
+
+<ParamField path="getSceneElementsIncludingDeleted" type="function">
+  Get all elements including deleted ones.
+  
+  ```typescript
+  getSceneElementsIncludingDeleted: () => readonly ExcalidrawElement[];
+  ```
+</ParamField>
+
+<ParamField path="getSceneElementsMapIncludingDeleted" type="function">
+  Get elements as a Map for efficient lookup.
+  
+  ```typescript
+  getSceneElementsMapIncludingDeleted: () => Map<string, ExcalidrawElement>;
+  ```
+</ParamField>
+
+<ParamField path="applyDeltas" type="function">
+  Apply incremental updates to elements.
+  
+  ```typescript
+  applyDeltas: (
+    elementDeltas: readonly ExcalidrawElementDelta[],
+    options?: {
+      captureUpdate?: CaptureUpdateActionType;
+    },
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="mutateElement" type="function">
+  Mutate a single element.
+  
+  ```typescript
+  mutateElement: (
+    element: ExcalidrawElement,
+    updates: Partial<ExcalidrawElement>,
+    captureUpdate?: CaptureUpdateActionType,
+  ) => void;
+  ```
+</ParamField>
+
+### State Methods
+
+<ParamField path="getAppState" type="function">
+  Get the current app state.
+  
+  ```typescript
+  getAppState: () => AppState;
+  ```
+</ParamField>
+
+<ParamField path="getName" type="function">
+  Get the scene name.
+  
+  ```typescript
+  getName: () => string;
+  ```
+</ParamField>
+
+### File Methods
+
+<ParamField path="getFiles" type="function">
+  Get binary files (images) used in the scene.
+  
+  ```typescript
+  getFiles: () => BinaryFiles;
+  ```
+</ParamField>
+
+<ParamField path="addFiles" type="function">
+  Add binary files to the scene.
+  
+  ```typescript
+  addFiles: (data: BinaryFileData[]) => void;
+  ```
+</ParamField>
+
+### Library Methods
+
+<ParamField path="updateLibrary" type="function">
+  Update library items programmatically.
+  
+  ```typescript
+  updateLibrary: (opts: {
+    libraryItems: LibraryItems;
+    merge?: boolean;
+    prompt?: boolean;
+    openLibraryMenu?: boolean;
+    defaultStatus?: "published" | "unpublished";
+  }) => Promise<LibraryItems>;
+  ```
+</ParamField>
+
+### UI Methods
+
+<ParamField path="setActiveTool" type="function">
+  Change the active tool programmatically.
+  
+  ```typescript
+  setActiveTool: (tool: {
+    type: ToolType | "custom";
+    customType?: string;
+    locked?: boolean;
+  }) => void;
+  ```
+  
+  **ToolType:** "selection" | "lasso" | "rectangle" | "diamond" | "ellipse" | "arrow" | "line" | "freedraw" | "text" | "image" | "eraser" | "hand" | "frame" | "magicframe" | "embeddable" | "laser"
+</ParamField>
+
+<ParamField path="setCursor" type="function">
+  Set a custom cursor.
+  
+  ```typescript
+  setCursor: (cursor: string) => void;
+  ```
+</ParamField>
+
+<ParamField path="resetCursor" type="function">
+  Reset to the default cursor.
+  
+  ```typescript
+  resetCursor: () => void;
+  ```
+</ParamField>
+
+<ParamField path="toggleSidebar" type="function">
+  Toggle a sidebar's visibility.
+  
+  ```typescript
+  toggleSidebar: (opts: {
+    name: SidebarName;
+    tab?: SidebarTabName;
+    force?: boolean;
+  }) => boolean;
+  ```
+</ParamField>
+
+<ParamField path="setToast" type="function">
+  Show a toast notification.
+  
+  ```typescript
+  setToast: (toast: {
+    message: string;
+    closable?: boolean;
+    duration?: number;
+  } | null) => void;
+  ```
+</ParamField>
+
+### Utility Methods
+
+<ParamField path="refresh" type="function">
+  Force re-render of the scene.
+  
+  ```typescript
+  refresh: () => void;
+  ```
+</ParamField>
+
+<ParamField path="scrollToContent" type="function">
+  Scroll to view specific elements.
+  
+  ```typescript
+  scrollToContent: (
+    elements?: readonly ExcalidrawElement[],
+    opts?: {
+      fitToViewport?: boolean;
+      animate?: boolean;
+      duration?: number;
+    },
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="getEditorInterface" type="function">
+  Get the editor interface details.
+  
+  ```typescript
+  getEditorInterface: () => EditorInterface;
+  ```
+  
+  **EditorInterface:**
+  ```typescript
+  {
+    formFactor: "desktop" | "tablet" | "phone";
+    isMobile: boolean;
+    canFitSidebar: boolean;
+  }
+  ```
+</ParamField>
+
+<ParamField path="updateFrameRendering" type="function">
+  Control frame rendering settings.
+  
+  ```typescript
+  updateFrameRendering: (opts: {
+    enabled: boolean;
+    name?: boolean;
+    outline?: boolean;
+    clip?: boolean;
+  }) => void;
+  ```
+  
+  <Info>Use this in conjunction with `viewModeEnabled` to disable frame rendering.</Info>
+</ParamField>
+
+<ParamField path="registerAction" type="function">
+  Register a custom action.
+  
+  ```typescript
+  registerAction: (action: Action) => void;
+  ```
+</ParamField>
+
+<ParamField path="history.clear" type="function">
+  Clear undo/redo history.
+  
+  ```typescript
+  history: {
+    clear: () => void;
+  };
+  ```
+</ParamField>
+
+<ParamField path="id" type="string">
+  Unique ID of the Excalidraw instance.
+  
+  ```typescript
+  id: string;
+  ```
+</ParamField>
+
+### Event Listeners
+
+The API also provides methods to subscribe to events. All event listener methods return an unsubscribe function.
+
+<ParamField path="onChange" type="function">
+  Listen to changes. Returns unsubscribe function.
+  
+  ```typescript
+  onChange: (
+    callback: (
+      elements: readonly ExcalidrawElement[],
+      appState: AppState,
+      files: BinaryFiles,
+    ) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+<ParamField path="onIncrement" type="function">
+  Listen to increments. Returns unsubscribe function.
+  
+  ```typescript
+  onIncrement: (
+    callback: (event: DurableIncrement | EphemeralIncrement) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+<ParamField path="onPointerDown" type="function">
+  Listen to pointer down events. Returns unsubscribe function.
+  
+  ```typescript
+  onPointerDown: (
+    callback: (
+      activeTool: AppState["activeTool"],
+      pointerDownState: PointerDownState,
+      event: React.PointerEvent<HTMLElement>,
+    ) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+<ParamField path="onPointerUp" type="function">
+  Listen to pointer up events. Returns unsubscribe function.
+  
+  ```typescript
+  onPointerUp: (
+    callback: (
+      activeTool: AppState["activeTool"],
+      pointerDownState: PointerDownState,
+      event: PointerEvent,
+    ) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+<ParamField path="onScrollChange" type="function">
+  Listen to scroll/zoom changes. Returns unsubscribe function.
+  
+  ```typescript
+  onScrollChange: (
+    callback: (scrollX: number, scrollY: number, zoom: Zoom) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+<ParamField path="onUserFollow" type="function">
+  Listen to user follow events. Returns unsubscribe function.
+  
+  ```typescript
+  onUserFollow: (
+    callback: (payload: OnUserFollowedPayload) => void,
+  ) => UnsubscribeCallback;
+  ```
+</ParamField>
+
+## Complete Example
+
+```jsx
+import { useState, useEffect } from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  // Handle changes
+  const handleChange = (elements, appState, files) => {
+    console.log("Scene updated", { elements, appState, files });
+  };
+
+  // Use API after it's ready
+  useEffect(() => {
+    if (excalidrawAPI) {
+      // Subscribe to changes
+      const unsubscribe = excalidrawAPI.onChange((elements, appState, files) => {
+        console.log("API onChange", elements.length);
+      });
+
+      // Set active tool
+      excalidrawAPI.setActiveTool({ type: "rectangle" });
+
+      // Show toast
+      excalidrawAPI.setToast({
+        message: "Welcome to Excalidraw!",
+        duration: 3000,
+      });
+
+      return () => unsubscribe();
+    }
+  }, [excalidrawAPI]);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        onChange={handleChange}
+        initialData={{
+          elements: [],
+          appState: {
+            viewBackgroundColor: "#ffffff",
+          },
+        }}
+        theme="light"
+        name="My Diagram"
+        gridModeEnabled={false}
+        UIOptions={{
+          canvasActions: {
+            changeViewBackgroundColor: true,
+            clearCanvas: true,
+            export: { saveFileToDisk: true },
+            loadScene: true,
+            toggleTheme: true,
+          },
+        }}
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Type Definitions
+
+For complete TypeScript type definitions, see the source:
+
+```typescript
+import type {
+  ExcalidrawProps,
+  ExcalidrawImperativeAPI,
+  ExcalidrawElement,
+  AppState,
+  BinaryFiles,
+  LibraryItems,
+} from "@excalidraw/excalidraw/types";
+```
+
+## See Also
+
+- [UI Components API](/api/ui-components) - API reference for UI components
+- [Excalidraw Component](/components/excalidraw) - Usage guide and examples
+- [Embedding Guide](/guides/embedding) - Learn how to embed Excalidraw
+- [Customization Guide](/guides/customization) - Customize the editor appearance

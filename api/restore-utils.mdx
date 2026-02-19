@@ -1,0 +1,524 @@
+---
+title: "Restore Utilities"
+description: "Functions for restoring and validating Excalidraw data from various sources"
+---
+
+# Restore Utilities
+
+Utilities for loading, restoring, and validating Excalidraw elements and application state from saved data.
+
+## Element Restoration
+
+### restoreElements
+
+Restores elements from saved data, fixing inconsistencies and validating bindings.
+
+```typescript
+function restoreElements<T extends ExcalidrawElement>(
+  targetElements: readonly T[] | undefined | null,
+  existingElements?: Readonly<ElementsMapOrArray> | null,
+  opts?: {
+    refreshDimensions?: boolean;
+    repairBindings?: boolean;
+    deleteInvisibleElements?: boolean;
+  }
+): OrderedExcalidrawElement[]
+```
+
+<ParamField path="targetElements" type="readonly ExcalidrawElement[]" required>
+  Elements to restore
+</ParamField>
+
+<ParamField path="existingElements" type="ElementsMapOrArray">
+  Existing local elements for context (e.g., for repairing arrow bindings)
+</ParamField>
+
+<ParamField path="opts.refreshDimensions" type="boolean" default="false">
+  Refresh text element dimensions
+</ParamField>
+
+<ParamField path="opts.repairBindings" type="boolean" default="false">
+  Repair arrow bindings and container relationships
+</ParamField>
+
+<ParamField path="opts.deleteInvisibleElements" type="boolean" default="false">
+  Mark invisibly small elements as deleted
+</ParamField>
+
+<ResponseField name="elements" type="OrderedExcalidrawElement[]">
+  Restored and validated elements with fractional indices
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { restoreElements } from "@excalidraw/excalidraw";
+
+const restoredElements = restoreElements(
+  loadedElements,
+  existingElements,
+  {
+    refreshDimensions: true,
+    repairBindings: true,
+    deleteInvisibleElements: true,
+  }
+);
+```
+
+### restoreElement
+
+Restores a single element with proper type handling and migrations.
+
+```typescript
+function restoreElement(
+  element: ExcalidrawElement,
+  targetElementsMap: Readonly<ElementsMap>,
+  existingElementsMap?: Readonly<ElementsMap> | null,
+  opts?: {
+    deleteInvisibleElements?: boolean;
+  }
+): ExcalidrawElement | null
+```
+
+<ParamField path="element" type="ExcalidrawElement" required>
+  Element to restore
+</ParamField>
+
+<ParamField path="targetElementsMap" type="ElementsMap" required>
+  Map of all elements being restored
+</ParamField>
+
+<ParamField path="existingElementsMap" type="ElementsMap">
+  Map of existing elements for context
+</ParamField>
+
+<ParamField path="opts.deleteInvisibleElements" type="boolean">
+  Whether to mark invisible elements as deleted
+</ParamField>
+
+<ResponseField name="element" type="ExcalidrawElement | null">
+  Restored element or null if invalid
+</ResponseField>
+
+**What it does:**
+- Migrates legacy properties (e.g., `font`, `boundElementIds`, `strokeSharpness`)
+- Normalizes dimensions and coordinates
+- Repairs line/arrow points
+- Validates and restores bindings
+- Handles text wrapping and dimensions
+- Restores image elements with proper status
+
+## App State Restoration
+
+### restoreAppState
+
+Restores application state with default values and migrations.
+
+```typescript
+function restoreAppState(
+  appState: ImportedDataState["appState"],
+  localAppState?: Partial<AppState> | null
+): RestoredAppState
+```
+
+<ParamField path="appState" type="Partial<AppState>" required>
+  App state from saved data
+</ParamField>
+
+<ParamField path="localAppState" type="Partial<AppState>">
+  Local app state to merge with
+</ParamField>
+
+<ResponseField name="appState" type="AppState">
+  Complete app state with all properties initialized
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { restoreAppState } from "@excalidraw/excalidraw";
+
+const appState = restoreAppState(
+  savedAppState,
+  currentAppState
+);
+```
+
+**What it restores:**
+- View state (zoom, scroll position)
+- UI state (sidebar, theme, grid)
+- Tool selection
+- Export settings
+- Collaboration state
+- Legacy property migrations
+
+## Library Restoration
+
+### restoreLibraryItems
+
+Restores library items from saved data.
+
+```typescript
+function restoreLibraryItems(
+  libraryItems: ImportedDataState["libraryItems"],
+  defaultStatus: LibraryItem["status"]
+): LibraryItem[]
+```
+
+<ParamField path="libraryItems" type="LibraryItem[]" required>
+  Library items to restore
+</ParamField>
+
+<ParamField path="defaultStatus" type="'published' | 'unpublished'" required>
+  Default status for items without one
+</ParamField>
+
+<ResponseField name="items" type="LibraryItem[]">
+  Restored library items with valid elements
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { restoreLibraryItems } from "@excalidraw/excalidraw";
+
+const library = restoreLibraryItems(savedLibrary, "unpublished");
+```
+
+## Version Management
+
+### bumpElementVersions
+
+Bumps element versions relative to local elements (for conflict resolution).
+
+```typescript
+function bumpElementVersions(
+  targetElements: readonly ExcalidrawElement[],
+  localElements?: Readonly<ElementsMapOrArray> | null
+): ExcalidrawElement[]
+```
+
+<ParamField path="targetElements" type="readonly ExcalidrawElement[]" required>
+  Elements to bump versions for
+</ParamField>
+
+<ParamField path="localElements" type="ElementsMapOrArray">
+  Local elements to compare against
+</ParamField>
+
+<ResponseField name="elements" type="ExcalidrawElement[]">
+  Elements with versions bumped where needed
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { bumpElementVersions } from "@excalidraw/excalidraw";
+
+const importedElements = bumpElementVersions(
+  loadedElements,
+  scene.getElementsIncludingDeleted()
+);
+```
+
+**When to use:**
+- Importing files (to avoid conflicts with local elements)
+- Handling collaborative updates
+- Merging element collections
+
+## Data Serialization
+
+### serializeAsJSON
+
+Serializes elements, app state, and files to JSON.
+
+```typescript
+function serializeAsJSON(
+  elements: readonly ExcalidrawElement[],
+  appState: Partial<AppState>,
+  files: BinaryFiles,
+  type: "local" | "database"
+): string
+```
+
+<ParamField path="elements" type="readonly ExcalidrawElement[]" required>
+  Elements to serialize
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState>" required>
+  App state to serialize
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles" required>
+  Binary files to include
+</ParamField>
+
+<ParamField path="type" type="'local' | 'database'" required>
+  Serialization type (affects what's included)
+</ParamField>
+
+<ResponseField name="json" type="string">
+  JSON string with formatted Excalidraw data
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { serializeAsJSON } from "@excalidraw/excalidraw";
+
+const json = serializeAsJSON(
+  excalidrawAPI.getSceneElements(),
+  excalidrawAPI.getAppState(),
+  excalidrawAPI.getFiles(),
+  "local"
+);
+
+// Save to file or database
+localStorage.setItem("excalidraw-data", json);
+```
+
+**Type differences:**
+- `"local"`: Includes files, export-ready app state
+- `"database"`: Strips files, minimal app state for collaboration
+
+### serializeLibraryAsJSON
+
+Serializes library items to JSON.
+
+```typescript
+function serializeLibraryAsJSON(libraryItems: LibraryItems): string
+```
+
+<ParamField path="libraryItems" type="LibraryItem[]" required>
+  Library items to serialize
+</ParamField>
+
+<ResponseField name="json" type="string">
+  JSON string with library data
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { serializeLibraryAsJSON } from "@excalidraw/excalidraw";
+
+const libraryJSON = serializeLibraryAsJSON(library);
+localStorage.setItem("excalidraw-library", libraryJSON);
+```
+
+## Data Validation
+
+### isValidExcalidrawData
+
+Validates if data is a valid Excalidraw document.
+
+```typescript
+function isValidExcalidrawData(data?: unknown): data is ImportedDataState
+```
+
+<ParamField path="data" type="unknown" required>
+  Data to validate
+</ParamField>
+
+<ResponseField name="valid" type="boolean">
+  Whether data is valid Excalidraw format
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { isValidExcalidrawData } from "@excalidraw/excalidraw";
+
+try {
+  const data = JSON.parse(fileContent);
+  
+  if (isValidExcalidrawData(data)) {
+    const elements = restoreElements(data.elements);
+    const appState = restoreAppState(data.appState);
+    // Load into Excalidraw
+  } else {
+    console.error("Invalid Excalidraw file");
+  }
+} catch (error) {
+  console.error("Failed to parse file", error);
+}
+```
+
+## Complete Restoration Example
+
+```typescript
+import {
+  restoreElements,
+  restoreAppState,
+  restoreLibraryItems,
+  bumpElementVersions,
+  serializeAsJSON,
+  isValidExcalidrawData,
+} from "@excalidraw/excalidraw";
+
+class DataManager {
+  constructor(private excalidrawAPI) {}
+
+  // Load from file
+  async loadFromFile(file: File) {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!isValidExcalidrawData(data)) {
+      throw new Error("Invalid Excalidraw file");
+    }
+
+    // Get current state for merging
+    const currentElements = this.excalidrawAPI.getSceneElements();
+    const currentAppState = this.excalidrawAPI.getAppState();
+
+    // Restore elements with full validation
+    const restoredElements = restoreElements(
+      data.elements,
+      currentElements,
+      {
+        refreshDimensions: true,
+        repairBindings: true,
+        deleteInvisibleElements: true,
+      }
+    );
+
+    // Bump versions to avoid conflicts
+    const importedElements = bumpElementVersions(
+      restoredElements,
+      currentElements
+    );
+
+    // Restore app state
+    const appState = restoreAppState(data.appState, currentAppState);
+
+    // Update Excalidraw
+    this.excalidrawAPI.updateScene({
+      elements: importedElements,
+      appState,
+    });
+
+    console.log(`Loaded ${importedElements.length} elements`);
+  }
+
+  // Save to file
+  saveToFile(filename: string) {
+    const json = serializeAsJSON(
+      this.excalidrawAPI.getSceneElements(),
+      this.excalidrawAPI.getAppState(),
+      this.excalidrawAPI.getFiles(),
+      "local"
+    );
+
+    const blob = new Blob([json], {
+      type: "application/vnd.excalidraw+json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Auto-save to localStorage
+  autoSave() {
+    const json = serializeAsJSON(
+      this.excalidrawAPI.getSceneElements(),
+      this.excalidrawAPI.getAppState(),
+      this.excalidrawAPI.getFiles(),
+      "database" // Use database format for localStorage
+    );
+
+    localStorage.setItem("excalidraw-autosave", json);
+    console.log("Auto-saved to localStorage");
+  }
+
+  // Restore from auto-save
+  restoreAutoSave() {
+    const json = localStorage.getItem("excalidraw-autosave");
+    if (!json) {
+      return false;
+    }
+
+    try {
+      const data = JSON.parse(json);
+
+      if (isValidExcalidrawData(data)) {
+        const elements = restoreElements(data.elements, null, {
+          repairBindings: true,
+        });
+        const appState = restoreAppState(data.appState);
+
+        this.excalidrawAPI.updateScene({
+          elements,
+          appState,
+        });
+
+        return true;
+      }
+    } catch (error) {
+      console.error("Failed to restore auto-save", error);
+    }
+
+    return false;
+  }
+
+  // Export library
+  exportLibrary() {
+    const library = this.excalidrawAPI.getLibrary();
+    const json = serializeLibraryAsJSON(library);
+
+    const blob = new Blob([json], {
+      type: "application/vnd.excalidrawlib+json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "library.excalidrawlib";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Import library
+  async importLibrary(file: File) {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    const items = restoreLibraryItems(
+      data.libraryItems || data.library,
+      "unpublished"
+    );
+
+    // Merge with existing library
+    const currentLibrary = this.excalidrawAPI.getLibrary();
+    this.excalidrawAPI.updateLibrary([
+      ...currentLibrary,
+      ...items,
+    ]);
+
+    console.log(`Imported ${items.length} library items`);
+  }
+}
+
+// Usage
+const dataManager = new DataManager(excalidrawAPI);
+
+// Set up auto-save
+setInterval(() => {
+  dataManager.autoSave();
+}, 30000); // Every 30 seconds
+
+// Restore on load
+if (dataManager.restoreAutoSave()) {
+  console.log("Restored from auto-save");
+}
+```
+
+## See Also
+
+- [Element Utils](/api/element-utils) - Creating and manipulating elements
+- [Export Utils](/api/export-utils) - Exporting data
+- [Scene Utils](/api/scene-utils) - Managing scenes

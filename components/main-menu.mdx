@@ -1,0 +1,406 @@
+---
+title: "MainMenu Component"
+description: "Customizable hamburger menu component for Excalidraw editor"
+---
+
+# MainMenu Component
+
+The `MainMenu` component provides a customizable dropdown menu accessed via a hamburger icon. It's typically positioned in the top-left corner of the editor and contains actions like load, export, help, and custom menu items.
+
+## Basic Usage
+
+<CodeGroup>
+```jsx Default Menu
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.DefaultItems.SaveAsImage />
+          <MainMenu.Separator />
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Custom Menu Item
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleCustomAction = () => {
+    console.log("Custom action triggered");
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.Separator />
+          <MainMenu.Item onSelect={handleCustomAction} icon={customIcon}>
+            Custom Action
+          </MainMenu.Item>
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Menu with Link
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.Separator />
+          <MainMenu.ItemLink 
+            href="https://docs.excalidraw.com" 
+            icon={docsIcon}
+          >
+            Documentation
+          </MainMenu.ItemLink>
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Props
+
+<ParamField path="children" type="React.ReactNode">
+  Menu items and components to display in the dropdown. Can include `MainMenu.Item`, `MainMenu.ItemLink`, `MainMenu.DefaultItems.*`, `MainMenu.Separator`, and `MainMenu.Group`.
+</ParamField>
+
+<ParamField path="onSelect" type="function">
+  Callback fired when any menu item is selected (clicked on).
+  
+  ```typescript
+  onSelect?: (event: Event) => void;
+  ```
+</ParamField>
+
+## Subcomponents
+
+### MainMenu.Item
+
+A clickable menu item that triggers an action.
+
+```jsx
+<MainMenu.Item 
+  onSelect={handleAction}
+  icon={<MyIcon />}
+  shortcut="⌘K"
+>
+  Menu Item Label
+</MainMenu.Item>
+```
+
+**Props:**
+- `onSelect` (function, required) - Callback when item is clicked
+- `icon` (JSX.Element) - Icon to display before the label
+- `shortcut` (string) - Keyboard shortcut to display
+- `children` (React.ReactNode) - Label content
+
+### MainMenu.ItemLink
+
+A menu item that opens a link in a new tab.
+
+```jsx
+<MainMenu.ItemLink 
+  href="https://example.com"
+  icon={<LinkIcon />}
+>
+  External Link
+</MainMenu.ItemLink>
+```
+
+**Props:**
+- `href` (string, required) - URL to open
+- `icon` (JSX.Element) - Icon to display before the label
+- `shortcut` (string) - Keyboard shortcut to display
+- `children` (React.ReactNode) - Label content
+
+### MainMenu.ItemCustom
+
+A fully custom menu item with complete control over rendering.
+
+```jsx
+<MainMenu.ItemCustom>
+  <div className="custom-menu-item">
+    {/* Your custom content */}
+  </div>
+</MainMenu.ItemCustom>
+```
+
+### MainMenu.Separator
+
+A visual separator between menu items.
+
+```jsx
+<MainMenu.Separator />
+```
+
+### MainMenu.Group
+
+Groups related menu items together.
+
+```jsx
+<MainMenu.Group>
+  <MainMenu.Item onSelect={handler1}>Item 1</MainMenu.Item>
+  <MainMenu.Item onSelect={handler2}>Item 2</MainMenu.Item>
+</MainMenu.Group>
+```
+
+### MainMenu.Sub
+
+Creates a submenu.
+
+```jsx
+<MainMenu.Sub label="More Options" icon={<MoreIcon />}>
+  <MainMenu.Item onSelect={handler1}>Sub Item 1</MainMenu.Item>
+  <MainMenu.Item onSelect={handler2}>Sub Item 2</MainMenu.Item>
+</MainMenu.Sub>
+```
+
+### MainMenu.Trigger
+
+Custom trigger component to open the menu (overrides default hamburger icon).
+
+```jsx
+<MainMenu.Trigger>
+  <button>Open Menu</button>
+</MainMenu.Trigger>
+```
+
+## Default Items
+
+Excalidraw provides pre-built menu items accessible via `MainMenu.DefaultItems`:
+
+### MainMenu.DefaultItems.LoadScene
+
+Opens a file picker to load a scene from a .excalidraw file.
+
+```jsx
+<MainMenu.DefaultItems.LoadScene />
+```
+
+### MainMenu.DefaultItems.SaveToActiveFile
+
+Saves the current scene to the active file.
+
+```jsx
+<MainMenu.DefaultItems.SaveToActiveFile />
+```
+
+### MainMenu.DefaultItems.Export
+
+Opens the export dialog to save as PNG, SVG, or JSON.
+
+```jsx
+<MainMenu.DefaultItems.Export />
+```
+
+### MainMenu.DefaultItems.SaveAsImage
+
+Quickly export the canvas as an image.
+
+```jsx
+<MainMenu.DefaultItems.SaveAsImage />
+```
+
+### MainMenu.DefaultItems.Help
+
+Opens the help dialog showing keyboard shortcuts.
+
+```jsx
+<MainMenu.DefaultItems.Help />
+```
+
+### MainMenu.DefaultItems.ClearCanvas
+
+Clears all elements from the canvas.
+
+```jsx
+<MainMenu.DefaultItems.ClearCanvas />
+```
+
+### MainMenu.DefaultItems.ToggleTheme
+
+Toggles between light and dark themes.
+
+```jsx
+<MainMenu.DefaultItems.ToggleTheme />
+```
+
+### MainMenu.DefaultItems.ChangeCanvasBackground
+
+Opens a color picker to change the canvas background.
+
+```jsx
+<MainMenu.DefaultItems.ChangeCanvasBackground />
+```
+
+## Complete Examples
+
+<CodeGroup>
+```jsx Full Menu with Custom Items
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+import { 
+  DownloadIcon, 
+  SettingsIcon, 
+  InfoIcon 
+} from "./icons";
+
+function App() {
+  const handleExport = () => {
+    // Custom export logic
+  };
+
+  const handleSettings = () => {
+    // Open settings
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu onSelect={(e) => console.log("Menu item selected", e)}>
+          {/* File operations */}
+          <MainMenu.Group>
+            <MainMenu.DefaultItems.LoadScene />
+            <MainMenu.DefaultItems.SaveToActiveFile />
+          </MainMenu.Group>
+          
+          <MainMenu.Separator />
+          
+          {/* Export options */}
+          <MainMenu.Group>
+            <MainMenu.DefaultItems.Export />
+            <MainMenu.Item 
+              onSelect={handleExport}
+              icon={DownloadIcon}
+              shortcut="⌘E"
+            >
+              Export to Cloud
+            </MainMenu.Item>
+          </MainMenu.Group>
+          
+          <MainMenu.Separator />
+          
+          {/* Canvas actions */}
+          <MainMenu.Group>
+            <MainMenu.DefaultItems.ChangeCanvasBackground />
+            <MainMenu.DefaultItems.ClearCanvas />
+          </MainMenu.Group>
+          
+          <MainMenu.Separator />
+          
+          {/* Settings & Help */}
+          <MainMenu.Item 
+            onSelect={handleSettings}
+            icon={SettingsIcon}
+          >
+            Settings
+          </MainMenu.Item>
+          
+          <MainMenu.ItemLink 
+            href="https://docs.excalidraw.com"
+            icon={InfoIcon}
+          >
+            Documentation
+          </MainMenu.ItemLink>
+          
+          <MainMenu.DefaultItems.Help />
+          
+          <MainMenu.Separator />
+          
+          {/* Theme */}
+          <MainMenu.DefaultItems.ToggleTheme />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Menu with Submenu
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          
+          <MainMenu.Sub label="Export" icon={exportIcon}>
+            <MainMenu.DefaultItems.SaveAsImage />
+            <MainMenu.Item onSelect={exportToPDF}>
+              Export as PDF
+            </MainMenu.Item>
+            <MainMenu.Item onSelect={exportToClipboard}>
+              Copy to Clipboard
+            </MainMenu.Item>
+          </MainMenu.Sub>
+          
+          <MainMenu.Separator />
+          
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Styling
+
+The MainMenu uses CSS classes that can be targeted for custom styling:
+
+- `.main-menu-trigger` - The hamburger icon button
+- `.main-menu` - The dropdown menu container
+- `.main-menu-item` - Individual menu items
+
+```css
+.main-menu-trigger {
+  color: #6965db;
+}
+
+.main-menu {
+  min-width: 200px;
+}
+
+.main-menu-item:hover {
+  background-color: #f3f4f6;
+}
+```
+
+## Best Practices
+
+1. **Keep it simple** - Don't overcrowd the menu with too many items
+2. **Group related actions** - Use `MainMenu.Group` and `MainMenu.Separator` for better organization
+3. **Use icons** - Icons help users quickly identify actions
+4. **Show shortcuts** - Display keyboard shortcuts when available
+5. **Handle mobile** - The menu automatically adapts to mobile screens, showing the collaborators list when in collaboration mode
+
+## See Also
+
+- [Excalidraw](/components/excalidraw) - Main component documentation
+- [WelcomeScreen](/components/welcome-screen) - Welcome screen customization
+- [Sidebar](/components/sidebar) - Custom sidebars

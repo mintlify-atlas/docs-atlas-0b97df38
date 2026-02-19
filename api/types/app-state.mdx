@@ -1,0 +1,588 @@
+---
+title: "AppState"
+description: "Type definition for Excalidraw's application state"
+---
+
+## AppState
+
+The complete application state interface for Excalidraw. This contains all UI state, canvas state, tool state, and user preferences.
+
+## UI State
+
+### Context Menu
+
+<ResponseField name="contextMenu" type="{ items: ContextMenuItems; top: number; left: number } | null" required>
+  Current context menu state including items and position, or null if no context menu is shown
+</ResponseField>
+
+### Dialogs and Modals
+
+<ResponseField name="openDialog" type="OpenDialog" required>
+  Currently open dialog. Can be:
+  - `null` - No dialog open
+  - `{ name: "imageExport" | "help" | "jsonExport" }`
+  - `{ name: "ttd"; tab: "text-to-diagram" | "mermaid" }`
+  - `{ name: "commandPalette" }`
+  - `{ name: "settings" }`
+  - `{ name: "elementLinkSelector"; sourceElementId: string }`
+</ResponseField>
+
+<ResponseField name="openMenu" type="'canvas' | null" required>
+  Currently open menu
+</ResponseField>
+
+<ResponseField name="openPopup" type="OpenPopup" required>
+  Currently open popup. Can be:
+  - `"canvasBackground"`
+  - `"elementBackground"`
+  - `"elementStroke"`
+  - `"fontFamily"`
+  - `"compactTextProperties"`
+  - `"compactStrokeStyles"`
+  - `"compactOtherProperties"`
+  - `"compactArrowProperties"`
+  - `null`
+</ResponseField>
+
+<ResponseField name="openSidebar" type="{ name: SidebarName; tab?: SidebarTabName } | null" required>
+  Currently open sidebar with optional tab selection
+</ResponseField>
+
+<ResponseField name="pasteDialog" type="PasteDialog" required>
+  Paste dialog state:
+  - `{ shown: false; data: null }`
+  - `{ shown: true; data: Spreadsheet }`
+</ResponseField>
+
+<ResponseField name="showHyperlinkPopup" type="false | 'info' | 'editor'" required>
+  Hyperlink popup state
+</ResponseField>
+
+<ResponseField name="showWelcomeScreen" type="boolean" required>
+  Whether to show the welcome screen
+</ResponseField>
+
+### Messages and Notifications
+
+<ResponseField name="isLoading" type="boolean" required>
+  Whether the app is in a loading state
+</ResponseField>
+
+<ResponseField name="errorMessage" type="React.ReactNode" required>
+  Current error message to display
+</ResponseField>
+
+<ResponseField name="toast" type="{ message: string; closable?: boolean; duration?: number } | null" required>
+  Toast notification configuration
+</ResponseField>
+
+## Canvas State
+
+### Viewport
+
+<ResponseField name="scrollX" type="number" required>
+  Horizontal scroll offset of the canvas
+</ResponseField>
+
+<ResponseField name="scrollY" type="number" required>
+  Vertical scroll offset of the canvas
+</ResponseField>
+
+<ResponseField name="zoom" type="Zoom" required>
+  Zoom level configuration object with normalized value
+</ResponseField>
+
+<ResponseField name="width" type="number" required>
+  Canvas width in pixels
+</ResponseField>
+
+<ResponseField name="height" type="number" required>
+  Canvas height in pixels
+</ResponseField>
+
+<ResponseField name="offsetLeft" type="number" required>
+  Left offset of the canvas container
+</ResponseField>
+
+<ResponseField name="offsetTop" type="number" required>
+  Top offset of the canvas container
+</ResponseField>
+
+<ResponseField name="scrolledOutside" type="boolean" required>
+  Whether the user has scrolled outside the canvas bounds
+</ResponseField>
+
+### View Settings
+
+<ResponseField name="viewBackgroundColor" type="string" required>
+  Background color of the canvas
+</ResponseField>
+
+<ResponseField name="viewModeEnabled" type="boolean" required>
+  Whether view-only mode is enabled (no editing)
+</ResponseField>
+
+<ResponseField name="zenModeEnabled" type="boolean" required>
+  Whether zen mode is enabled (minimal UI)
+</ResponseField>
+
+<ResponseField name="gridModeEnabled" type="boolean" required>
+  Whether grid is visible
+</ResponseField>
+
+<ResponseField name="gridSize" type="number" required>
+  Grid cell size in pixels
+</ResponseField>
+
+<ResponseField name="gridStep" type="number" required>
+  Grid step multiplier
+</ResponseField>
+
+<ResponseField name="objectsSnapModeEnabled" type="boolean" required>
+  Whether object snapping is enabled
+</ResponseField>
+
+<ResponseField name="snapLines" type="readonly SnapLine[]" required>
+  Current snap lines for alignment
+</ResponseField>
+
+<ResponseField name="originSnapOffset" type="{ x: number; y: number } | null" required>
+  Offset for origin snapping
+</ResponseField>
+
+<ResponseField name="theme" type="Theme" required>
+  Current theme: `"light"` or `"dark"`
+</ResponseField>
+
+### Frame Rendering
+
+<ResponseField name="frameRendering" type="FrameRendering" required>
+  Frame rendering configuration:
+  - `enabled: boolean` - Whether frames are rendered
+  - `name: boolean` - Whether frame names are shown
+  - `outline: boolean` - Whether frame outlines are shown
+  - `clip: boolean` - Whether content is clipped to frames
+</ResponseField>
+
+<ResponseField name="frameToHighlight" type="ExcalidrawFrameLikeElement | null" required>
+  Frame element currently being highlighted
+</ResponseField>
+
+<ResponseField name="editingFrame" type="string | null" required>
+  ID of the frame currently being edited
+</ResponseField>
+
+## Element State
+
+### Selection
+
+<ResponseField name="selectedElementIds" type="Readonly<{ [id: string]: true }>" required>
+  Map of selected element IDs
+</ResponseField>
+
+<ResponseField name="previousSelectedElementIds" type="{ [id: string]: true }" required>
+  Previously selected element IDs
+</ResponseField>
+
+<ResponseField name="hoveredElementIds" type="Readonly<{ [id: string]: true }>" required>
+  Map of hovered element IDs
+</ResponseField>
+
+<ResponseField name="selectedGroupIds" type="{ [groupId: string]: boolean }" required>
+  Top-most selected groups (does not include nested groups)
+</ResponseField>
+
+<ResponseField name="editingGroupId" type="GroupId | null" required>
+  Group being edited when you drill down to its constituent element (e.g., when double-clicking a group element)
+</ResponseField>
+
+<ResponseField name="elementsToHighlight" type="NonDeleted<ExcalidrawElement>[] | null" required>
+  Elements to highlight
+</ResponseField>
+
+### Element Manipulation
+
+<ResponseField name="newElement" type="NonDeleted<ExcalidrawNonSelectionElement> | null" required>
+  Newly created element being drawn (set on pointer down, updated during pointer move, used on pointer up)
+</ResponseField>
+
+<ResponseField name="resizingElement" type="NonDeletedExcalidrawElement | null" required>
+  Element currently being resized (set on pointer down when selected and active tool is selection)
+</ResponseField>
+
+<ResponseField name="multiElement" type="NonDeleted<ExcalidrawLinearElement> | null" required>
+  Multi-point linear element created by clicking (not dragging). When set, the editor handles linear element creation logic
+</ResponseField>
+
+<ResponseField name="selectionElement" type="NonDeletedExcalidrawElement | null" required>
+  Selection box element (decoupled from newElement, dragging selection only creates selectionElement)
+</ResponseField>
+
+<ResponseField name="isResizing" type="boolean" required>
+  Whether an element is currently being resized
+</ResponseField>
+
+<ResponseField name="isRotating" type="boolean" required>
+  Whether an element is currently being rotated
+</ResponseField>
+
+<ResponseField name="selectedElementsAreBeingDragged" type="boolean" required>
+  Whether selected elements are being dragged
+</ResponseField>
+
+### Text Editing
+
+<ResponseField name="editingTextElement" type="NonDeletedExcalidrawElement | null" required>
+  Text element currently being edited (set when creating new text or editing existing text)
+</ResponseField>
+
+### Linear Elements
+
+<ResponseField name="selectedLinearElement" type="LinearElementEditor | null" required>
+  Currently selected linear element with editing state
+</ResponseField>
+
+### Binding
+
+<ResponseField name="isBindingEnabled" type="boolean" required>
+  Whether element binding is enabled
+</ResponseField>
+
+<ResponseField name="startBoundElement" type="NonDeleted<ExcalidrawBindableElement> | null" required>
+  Element at the start of a binding operation
+</ResponseField>
+
+<ResponseField name="suggestedBinding" type="SuggestedBinding | null" required>
+  Suggested binding during arrow creation:
+  - `element: NonDeleted<ExcalidrawBindableElement>`
+  - `midPoint?: GlobalPoint`
+</ResponseField>
+
+<ResponseField name="bindMode" type="BindMode" required>
+  Current binding mode: `"inside"` | `"orbit"` | `"skip"`
+</ResponseField>
+
+### Embeddables
+
+<ResponseField name="activeEmbeddable" type="ActiveEmbeddable | null" required>
+  Currently active embeddable element:
+  - `element: NonDeletedExcalidrawElement`
+  - `state: "hover" | "active"`
+</ResponseField>
+
+### Image Cropping
+
+<ResponseField name="isCropping" type="boolean" required>
+  Whether image cropping mode is active
+</ResponseField>
+
+<ResponseField name="croppingElementId" type="string | null" required>
+  ID of the element being cropped
+</ResponseField>
+
+### Locking
+
+<ResponseField name="activeLockedId" type="string | null" required>
+  The locked element/group that's active and shows unlock popup
+</ResponseField>
+
+<ResponseField name="lockedMultiSelections" type="{ [groupId: string]: true }" required>
+  Temporary group IDs for locked multi-selections. Elements are unlocked together and groupId is removed
+</ResponseField>
+
+## Tool State
+
+<ResponseField name="activeTool" type="ActiveTool & { lastActiveTool: ActiveTool | null; locked: boolean; fromSelection: boolean }" required>
+  Current active tool configuration:
+  - `type: ToolType` or `"custom"`
+  - `customType: string | null`
+  - `lastActiveTool` - Previous tool to revert to (applies to eraser and hand)
+  - `locked` - Whether tool is locked
+  - `fromSelection` - Whether tool is temporarily switched from selection tool
+</ResponseField>
+
+<ResponseField name="preferredSelectionTool" type="{ type: 'selection' | 'lasso'; initialized: boolean }" required>
+  User's preferred selection tool
+</ResponseField>
+
+<ResponseField name="penMode" type="boolean" required>
+  Whether pen mode is active
+</ResponseField>
+
+<ResponseField name="penDetected" type="boolean" required>
+  Whether pen input has been detected
+</ResponseField>
+
+## Current Drawing Properties
+
+These properties represent the current tool settings that will be applied to newly created elements.
+
+<ResponseField name="currentItemStrokeColor" type="string" required>
+  Current stroke color for new elements
+</ResponseField>
+
+<ResponseField name="currentItemBackgroundColor" type="string" required>
+  Current background color for new elements
+</ResponseField>
+
+<ResponseField name="currentItemFillStyle" type="FillStyle" required>
+  Current fill style for new elements
+</ResponseField>
+
+<ResponseField name="currentItemStrokeWidth" type="number" required>
+  Current stroke width for new elements
+</ResponseField>
+
+<ResponseField name="currentItemStrokeStyle" type="StrokeStyle" required>
+  Current stroke style for new elements
+</ResponseField>
+
+<ResponseField name="currentItemRoughness" type="number" required>
+  Current roughness for new elements
+</ResponseField>
+
+<ResponseField name="currentItemOpacity" type="number" required>
+  Current opacity for new elements
+</ResponseField>
+
+<ResponseField name="currentItemFontFamily" type="FontFamilyValues" required>
+  Current font family for new text elements
+</ResponseField>
+
+<ResponseField name="currentItemFontSize" type="number" required>
+  Current font size for new text elements
+</ResponseField>
+
+<ResponseField name="currentItemTextAlign" type="TextAlign" required>
+  Current text alignment for new text elements
+</ResponseField>
+
+<ResponseField name="currentItemStartArrowhead" type="Arrowhead | null" required>
+  Current start arrowhead for new arrows
+</ResponseField>
+
+<ResponseField name="currentItemEndArrowhead" type="Arrowhead | null" required>
+  Current end arrowhead for new arrows
+</ResponseField>
+
+<ResponseField name="currentItemRoundness" type="StrokeRoundness" required>
+  Current roundness for new elements
+</ResponseField>
+
+<ResponseField name="currentItemArrowType" type="'sharp' | 'round' | 'elbow'" required>
+  Current arrow type for new arrows
+</ResponseField>
+
+<ResponseField name="currentHoveredFontFamily" type="FontFamilyValues | null" required>
+  Font family currently being hovered in the font picker
+</ResponseField>
+
+## Export Settings
+
+<ResponseField name="exportBackground" type="boolean" required>
+  Whether to include background when exporting
+</ResponseField>
+
+<ResponseField name="exportEmbedScene" type="boolean" required>
+  Whether to embed scene data when exporting
+</ResponseField>
+
+<ResponseField name="exportWithDarkMode" type="boolean" required>
+  Whether to export using dark mode colors
+</ResponseField>
+
+<ResponseField name="exportScale" type="number" required>
+  Export scale multiplier
+</ResponseField>
+
+## Pointer and Input State
+
+<ResponseField name="lastPointerDownWith" type="PointerType" required>
+  Last pointer type used: `"mouse"` | `"pen"` | `"touch"`
+</ResponseField>
+
+<ResponseField name="cursorButton" type="'up' | 'down'" required>
+  Current cursor button state
+</ResponseField>
+
+## File State
+
+<ResponseField name="name" type="string | null" required>
+  Name of the current file/scene
+</ResponseField>
+
+<ResponseField name="fileHandle" type="FileSystemHandle | null" required>
+  File system handle for the current file
+</ResponseField>
+
+## Collaboration
+
+<ResponseField name="collaborators" type="Map<SocketId, Collaborator>" required>
+  Map of active collaborators by socket ID
+</ResponseField>
+
+<ResponseField name="userToFollow" type="UserToFollow | null" required>
+  The user's socket ID and username who is being followed on the canvas
+</ResponseField>
+
+<ResponseField name="followedBy" type="Set<SocketId>" required>
+  Set of socket IDs of users following the current user
+</ResponseField>
+
+## Statistics
+
+<ResponseField name="stats" type="{ open: boolean; panels: number }" required>
+  Statistics panel state:
+  - `open` - Whether stats panel is open
+  - `panels` - Bitmap of visible panels (use STATS_PANELS bit values)
+</ResponseField>
+
+## Chart Settings
+
+<ResponseField name="currentChartType" type="ChartType" required>
+  Current chart type: `"bar"` | `"line"`
+</ResponseField>
+
+## Search
+
+<ResponseField name="searchMatches" type="SearchMatches | null" required>
+  Current search matches, or null if no search is active:
+  - `focusedId: string | null` - Currently focused match
+  - `matches: readonly SearchMatch[]` - Array of all matches
+</ResponseField>
+
+## UI Preferences
+
+<ResponseField name="defaultSidebarDockedPreference" type="boolean" required>
+  User preference for whether the default sidebar should be docked. Note: This is only a preference and does not reflect actual docked state, as host apps can override this
+</ResponseField>
+
+<ResponseField name="shouldCacheIgnoreZoom" type="boolean" required>
+  Whether to cache rendering ignoring zoom level
+</ResponseField>
+
+## Supporting Types
+
+### Zoom
+
+<ResponseField name="value" type="NormalizedZoomValue" required>
+  Normalized zoom value (branded number type)
+</ResponseField>
+
+### Collaborator
+
+<ResponseField name="pointer" type="CollaboratorPointer">
+  Collaborator's pointer position and configuration
+</ResponseField>
+
+<ResponseField name="button" type="'up' | 'down'">
+  Collaborator's button state
+</ResponseField>
+
+<ResponseField name="selectedElementIds" type="AppState['selectedElementIds']">
+  Collaborator's selected elements
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  Collaborator's username
+</ResponseField>
+
+<ResponseField name="userState" type="UserIdleState">
+  Collaborator's idle state
+</ResponseField>
+
+<ResponseField name="color" type="{ background: string; stroke: string }">
+  Collaborator's cursor colors
+</ResponseField>
+
+<ResponseField name="avatarUrl" type="string">
+  URL of collaborator's avatar (defaults to username initials if not present)
+</ResponseField>
+
+<ResponseField name="id" type="string">
+  User ID (used to filter duplicates when rendering avatars)
+</ResponseField>
+
+<ResponseField name="socketId" type="SocketId">
+  Collaborator's socket ID
+</ResponseField>
+
+<ResponseField name="isCurrentUser" type="boolean">
+  Whether this is the current user
+</ResponseField>
+
+<ResponseField name="isInCall" type="boolean">
+  Whether collaborator is in a call
+</ResponseField>
+
+<ResponseField name="isSpeaking" type="boolean">
+  Whether collaborator is speaking
+</ResponseField>
+
+<ResponseField name="isMuted" type="boolean">
+  Whether collaborator is muted
+</ResponseField>
+
+### CollaboratorPointer
+
+<ResponseField name="x" type="number" required>
+  X coordinate of pointer
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Y coordinate of pointer
+</ResponseField>
+
+<ResponseField name="tool" type="'pointer' | 'laser'" required>
+  Tool type
+</ResponseField>
+
+<ResponseField name="renderCursor" type="boolean" default="true">
+  Whether to render cursor and username (useful when only rendering laser trail)
+</ResponseField>
+
+<ResponseField name="laserColor" type="string">
+  Explicit laser color (defaults to collaborator's cursor color)
+</ResponseField>
+
+### SearchMatch
+
+<ResponseField name="id" type="string" required>
+  Element ID of the match
+</ResponseField>
+
+<ResponseField name="focus" type="boolean" required>
+  Whether this match is focused
+</ResponseField>
+
+<ResponseField name="matchedLines" type="MatchedLine[]" required>
+  Array of matched line positions
+</ResponseField>
+
+### UserToFollow
+
+<ResponseField name="socketId" type="SocketId" required>
+  Socket ID of the user being followed
+</ResponseField>
+
+<ResponseField name="username" type="string" required>
+  Username of the user being followed
+</ResponseField>
+
+## Derived Types
+
+### UIAppState
+
+AppState without internal pointer/cursor state:
+
+```typescript
+type UIAppState = Omit<AppState, "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">
+```
+
+### StaticCanvasAppState
+
+Minimal state for rendering static canvas.
+
+### InteractiveCanvasAppState
+
+State for rendering interactive canvas with selection and collaboration features.

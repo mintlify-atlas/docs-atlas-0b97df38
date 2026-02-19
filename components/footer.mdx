@@ -1,0 +1,481 @@
+---
+title: "Footer Component"
+description: "Customizable footer component for the Excalidraw editor"
+---
+
+# Footer Component
+
+The `Footer` component is a customizable area at the bottom of the Excalidraw editor. By default, it contains zoom controls, undo/redo actions, and a help button. You can extend it with custom content through the `FooterCenter` tunnel.
+
+## Basic Usage
+
+<CodeGroup>
+```jsx Default Footer
+import { Excalidraw, Footer } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Footer>
+          <div style={{ padding: "0 1rem" }}>
+            Custom footer content
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Footer with Custom Actions
+import { Excalidraw, Footer } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleExport = () => {
+    console.log("Export clicked");
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Footer>
+          <button onClick={handleExport}>
+            Quick Export
+          </button>
+          <span style={{ marginLeft: "1rem", color: "#666" }}>
+            Last saved: Just now
+          </span>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Footer Anatomy
+
+The default footer is divided into three sections:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [Zoom Controls]     [Custom Center Content]      [Help]   │
+│  [Undo/Redo]                                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Left Section
+
+Contains:
+- **Zoom Actions**: Zoom in, zoom out, reset zoom, fit to content
+- **Undo/Redo Actions**: Undo and redo buttons (hidden in view mode)
+
+These actions are built-in and rendered automatically.
+
+### Center Section
+
+This is where you can add custom content using the `Footer` component:
+
+```jsx
+<Footer>
+  {/* Your custom content appears here */}
+  <div>Custom footer content</div>
+</Footer>
+```
+
+### Right Section
+
+Contains:
+- **Help Button**: Opens the keyboard shortcuts dialog
+- **Welcome Screen Hint**: (shown when welcome screen is active)
+
+These are built-in components.
+
+## Default Actions
+
+The footer includes these built-in actions:
+
+### Zoom Actions
+
+- **Zoom In** - Increases canvas zoom level
+- **Zoom Out** - Decreases canvas zoom level
+- **Reset Zoom** - Resets zoom to 100%
+- **Zoom to Fit** - Fits all content in viewport
+
+Keyboard shortcuts:
+- `Cmd/Ctrl + +` - Zoom in
+- `Cmd/Ctrl + -` - Zoom out
+- `Cmd/Ctrl + 0` - Reset zoom
+- `Cmd/Ctrl + 1` - Zoom to fit
+
+### Undo/Redo Actions
+
+- **Undo** - Reverts the last action
+- **Redo** - Reapplies an undone action
+
+Keyboard shortcuts:
+- `Cmd/Ctrl + Z` - Undo
+- `Cmd/Ctrl + Shift + Z` - Redo
+
+<Note>
+Undo/Redo actions are automatically hidden when `viewModeEnabled` is `true`.
+</Note>
+
+### Help Button
+
+Opens a dialog showing all available keyboard shortcuts and actions.
+
+- Keyboard shortcut: `?`
+- Always visible unless explicitly hidden via CSS
+
+## Customization Examples
+
+<CodeGroup>
+```jsx Status Indicator
+import { Excalidraw, Footer } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [saveStatus, setSaveStatus] = useState("saved");
+  const [lastSaved, setLastSaved] = useState(new Date());
+
+  useEffect(() => {
+    // Simulate auto-save
+    const interval = setInterval(() => {
+      setSaveStatus("saving...");
+      setTimeout(() => {
+        setSaveStatus("saved");
+        setLastSaved(new Date());
+      }, 500);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Footer>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "0.5rem",
+            fontSize: "0.875rem",
+            color: "#666"
+          }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: saveStatus === "saved" ? "#10b981" : "#f59e0b"
+              }}
+            />
+            <span>
+              {saveStatus === "saved" 
+                ? `Saved at ${lastSaved.toLocaleTimeString()}`
+                : "Saving..."
+              }
+            </span>
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Element Counter
+import { Excalidraw, Footer } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [elementCount, setElementCount] = useState(0);
+
+  const handleChange = (elements) => {
+    setElementCount(elements.length);
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        onChange={handleChange}
+      >
+        <Footer>
+          <div style={{ fontSize: "0.875rem", color: "#666" }}>
+            {elementCount} {elementCount === 1 ? "element" : "elements"}
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Quick Actions Bar
+import { Excalidraw, Footer, Button } from "@excalidraw/excalidraw";
+import { 
+  DownloadIcon, 
+  ShareIcon, 
+  PrintIcon 
+} from "./icons";
+
+function App() {
+  const handleExport = () => {
+    console.log("Export");
+  };
+
+  const handleShare = () => {
+    console.log("Share");
+  };
+
+  const handlePrint = () => {
+    console.log("Print");
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Footer>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button 
+              onSelect={handleExport}
+              title="Export"
+            >
+              {DownloadIcon} Export
+            </Button>
+            <Button 
+              onSelect={handleShare}
+              title="Share"
+            >
+              {ShareIcon} Share
+            </Button>
+            <Button 
+              onSelect={handlePrint}
+              title="Print"
+            >
+              {PrintIcon} Print
+            </Button>
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Zen Mode Behavior
+
+When Zen Mode is enabled (`zenModeEnabled={true}`), the footer (and other UI elements) are hidden to provide a distraction-free experience. There's a special exit button that appears to leave Zen Mode.
+
+The footer animates out with CSS transitions when entering Zen Mode:
+
+```css
+.layer-ui__wrapper__footer.zen-mode-transition {
+  transition: opacity 0.5s ease-in-out;
+}
+```
+
+## View Mode Behavior
+
+When View Mode is enabled (`viewModeEnabled={true}`):
+- Undo/Redo actions are hidden (no editing allowed)
+- Zoom controls remain visible
+- Custom footer content is still displayed
+- Help button remains visible
+
+## Styling
+
+The Footer uses these CSS classes that you can target:
+
+```css
+/* Footer container */
+.layer-ui__wrapper__footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+/* Left section (zoom, undo/redo) */
+.layer-ui__wrapper__footer-left {
+  pointer-events: all;
+}
+
+/* Right section (help button) */
+.layer-ui__wrapper__footer-right {
+  pointer-events: all;
+}
+
+/* Custom styles */
+.layer-ui__wrapper__footer {
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+}
+```
+
+## Accessibility
+
+The footer is marked with `role="contentinfo"` for screen reader accessibility:
+
+```jsx
+<footer role="contentinfo" className="layer-ui__wrapper__footer">
+  {/* Footer content */}
+</footer>
+```
+
+All interactive elements (buttons, controls) should have:
+- Descriptive `aria-label` or `title` attributes
+- Keyboard navigation support
+- Sufficient color contrast
+
+## Best Practices
+
+1. **Keep it concise** - Footer space is limited, avoid cluttering it
+2. **Use icons** - Icons help save space and improve scannability
+3. **Show status** - Use the footer for non-intrusive status updates
+4. **Quick actions only** - Reserve footer for frequently used actions
+5. **Responsive design** - Ensure footer adapts to mobile screens
+6. **Don't hide defaults** - Built-in zoom and undo/redo are essential
+
+## Complete Example
+
+<CodeGroup>
+```jsx Full Featured Footer
+import { useState, useEffect } from "react";
+import { 
+  Excalidraw, 
+  Footer, 
+  Button 
+} from "@excalidraw/excalidraw";
+import { 
+  DownloadIcon, 
+  CollaborateIcon,
+  CloudIcon
+} from "./icons";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [elementCount, setElementCount] = useState(0);
+  const [saveStatus, setSaveStatus] = useState("saved");
+  const [isCollaborating, setIsCollaborating] = useState(false);
+  const [collaboratorCount, setCollaboratorCount] = useState(0);
+
+  const handleChange = (elements, appState) => {
+    setElementCount(elements.length);
+    setCollaboratorCount(appState.collaborators?.size || 0);
+  };
+
+  const handleExport = () => {
+    // Export logic
+  };
+
+  const handleCollaborate = () => {
+    setIsCollaborating(!isCollaborating);
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        onChange={handleChange}
+        isCollaborating={isCollaborating}
+      >
+        <Footer>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "1rem",
+            fontSize: "0.875rem"
+          }}>
+            {/* Element count */}
+            <div style={{ color: "#666" }}>
+              {elementCount} elements
+            </div>
+            
+            {/* Divider */}
+            <div style={{ 
+              width: 1, 
+              height: 16, 
+              backgroundColor: "#e5e7eb" 
+            }} />
+            
+            {/* Save status */}
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "0.5rem",
+              color: "#666"
+            }}>
+              <CloudIcon />
+              <span>{saveStatus}</span>
+            </div>
+            
+            {/* Collaboration status */}
+            {isCollaborating && (
+              <>
+                <div style={{ 
+                  width: 1, 
+                  height: 16, 
+                  backgroundColor: "#e5e7eb" 
+                }} />
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "0.5rem",
+                  color: "#10b981"
+                }}>
+                  <CollaborateIcon />
+                  <span>{collaboratorCount} online</span>
+                </div>
+              </>
+            )}
+            
+            {/* Divider */}
+            <div style={{ 
+              width: 1, 
+              height: 16, 
+              backgroundColor: "#e5e7eb" 
+            }} />
+            
+            {/* Quick actions */}
+            <Button 
+              onSelect={handleExport}
+              title="Quick Export"
+            >
+              {DownloadIcon}
+            </Button>
+            
+            <Button 
+              onSelect={handleCollaborate}
+              selected={isCollaborating}
+              title="Toggle Collaboration"
+            >
+              {CollaborateIcon}
+            </Button>
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## See Also
+
+- [Excalidraw](/components/excalidraw) - Main component documentation
+- [Button](/components/buttons) - Button components for footer actions
+- [MainMenu](/components/main-menu) - Main menu customization

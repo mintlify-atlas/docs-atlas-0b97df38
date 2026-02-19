@@ -1,0 +1,697 @@
+---
+title: "Storage & Persistence"
+description: "Save and load Excalidraw drawings with various storage solutions"
+---
+
+## Overview
+
+Excalidraw provides flexible data persistence options. You can save drawings to local storage, databases, files, or custom backends. The library includes utilities for serialization, restoration, and file handling.
+
+## Local Storage
+
+### Using EditorLocalStorage
+
+Excalidraw provides a built-in localStorage wrapper:
+
+```jsx
+import { EditorLocalStorage } from "@excalidraw/excalidraw";
+
+// Check if key exists
+const hasData = EditorLocalStorage.has("excalidraw-state");
+
+// Get data
+const state = EditorLocalStorage.get("excalidraw-state");
+
+// Set data
+EditorLocalStorage.set("excalidraw-state", {
+  elements: [],
+  appState: {},
+});
+
+// Delete data
+EditorLocalStorage.delete("excalidraw-state");
+```
+
+<Note>
+From `packages/excalidraw/data/EditorLocalStorage.ts:5-53`, the `EditorLocalStorage` class wraps localStorage with error handling and JSON serialization.
+</Note>
+
+### Auto-Save Implementation
+
+Automatically save changes to localStorage:
+
+```jsx
+import { Excalidraw, serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState, useEffect, useCallback } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleChange = useCallback((elements, appState, files) => {
+    // Auto-save to localStorage
+    const data = serializeAsJSON(elements, appState, files, "local");
+    localStorage.setItem("excalidraw-autosave", data);
+  }, []);
+
+  // Load initial data
+  const initialData = (() => {
+    try {
+      const saved = localStorage.getItem("excalidraw-autosave");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error("Failed to load autosave:", error);
+    }
+    return null;
+  })();
+
+  return (
+    <Excalidraw
+      excalidrawAPI={(api) => setExcalidrawAPI(api)}
+      onChange={handleChange}
+      initialData={initialData}
+    />
+  );
+}
+```
+
+### Debounced Auto-Save
+
+Prevent excessive saves with debouncing:
+
+```jsx
+import { Excalidraw, serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState, useCallback, useRef } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const saveTimeoutRef = useRef(null);
+
+  const handleChange = useCallback((elements, appState, files) => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce save by 1 second
+    saveTimeoutRef.current = setTimeout(() => {
+      const data = serializeAsJSON(elements, appState, files, "local");
+      localStorage.setItem("excalidraw-autosave", data);
+      console.log("Auto-saved at", new Date().toISOString());
+    }, 1000);
+  }, []);
+
+  return (
+    <Excalidraw
+      excalidrawAPI={(api) => setExcalidrawAPI(api)}
+      onChange={handleChange}
+    />
+  );
+}
+```
+
+## File System
+
+### Save to File
+
+Save drawings as .excalidraw files:
+
+```jsx
+import { serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleSaveToFile = () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    // Serialize scene data
+    const json = serializeAsJSON(elements, appState, files, "local");
+
+    // Create and download file
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `drawing-${Date.now()}.excalidraw`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleSaveToFile}>Save to File</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+### Load from File
+
+Load drawings from .excalidraw files:
+
+```jsx
+import { Excalidraw, loadFromBlob } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleLoadFromFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !excalidrawAPI) return;
+
+    try {
+      // Load and parse file
+      const data = await loadFromBlob(
+        file,
+        excalidrawAPI.getAppState(),
+        excalidrawAPI.getSceneElements()
+      );
+
+      // Update scene
+      excalidrawAPI.updateScene({
+        elements: data.elements,
+        appState: data.appState,
+      });
+
+      // Update files
+      excalidrawAPI.addFiles(Object.values(data.files || {}));
+    } catch (error) {
+      console.error("Failed to load file:", error);
+      alert("Failed to load file");
+    }
+  };
+
+  return (
+    <>
+      <input
+        type="file"
+        accept=".excalidraw,.json,.png,.svg"
+        onChange={handleLoadFromFile}
+      />
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+From `packages/excalidraw/data/blob.ts:196-214`, `loadFromBlob` supports loading from .excalidraw, .json, .png (with embedded data), and .svg (with embedded data) files.
+</Tip>
+
+## Restore Functions
+
+### Restore Elements
+
+Safely restore elements from saved data:
+
+```jsx
+import { restoreElements, restoreAppState } from "@excalidraw/excalidraw";
+
+// Restore elements with validation and repair
+const elements = restoreElements(savedElements, null, {
+  repairBindings: true,
+  deleteInvisibleElements: true,
+});
+
+// Restore app state with defaults
+const appState = restoreAppState(savedAppState, null);
+```
+
+### Complete Restore Example
+
+```jsx
+import {
+  Excalidraw,
+  restoreElements,
+  restoreAppState,
+} from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [initialData, setInitialData] = useState(null);
+
+  useEffect(() => {
+    // Load from storage on mount
+    const loadData = async () => {
+      try {
+        const saved = localStorage.getItem("excalidraw-data");
+        if (!saved) return;
+
+        const data = JSON.parse(saved);
+
+        // Restore with validation
+        const elements = restoreElements(data.elements || [], null, {
+          repairBindings: true,
+          deleteInvisibleElements: true,
+        });
+
+        const appState = restoreAppState(data.appState || {}, null);
+
+        setInitialData({
+          elements,
+          appState,
+          files: data.files || {},
+        });
+      } catch (error) {
+        console.error("Failed to restore data:", error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  return initialData ? <Excalidraw initialData={initialData} /> : <div>Loading...</div>;
+}
+```
+
+## Database Storage
+
+### Saving to Backend
+
+Save drawings to a backend API:
+
+```jsx
+import { Excalidraw, serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveToBackend = async () => {
+    if (!excalidrawAPI) return;
+
+    setIsSaving(true);
+    try {
+      const elements = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+
+      // Serialize for database (excludes files by default)
+      const data = serializeAsJSON(elements, appState, files, "database");
+
+      // Save to your backend
+      const response = await fetch("/api/drawings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: JSON.parse(data),
+          timestamp: Date.now(),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Save failed");
+
+      const result = await response.json();
+      console.log("Saved with ID:", result.id);
+    } catch (error) {
+      console.error("Failed to save:", error);
+      alert("Failed to save to server");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <button onClick={handleSaveToBackend} disabled={isSaving}>
+        {isSaving ? "Saving..." : "Save to Server"}
+      </button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/data/json.ts:45-68`, when using `"database"` as the type parameter, `serializeAsJSON` calls `clearAppStateForDatabase` which strips sensitive/unnecessary data.
+</Note>
+
+### Loading from Backend
+
+Load drawings from a backend API:
+
+```jsx
+import {
+  Excalidraw,
+  restoreElements,
+  restoreAppState,
+} from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App({ drawingId }) {
+  const [initialData, setInitialData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDrawing = async () => {
+      try {
+        const response = await fetch(`/api/drawings/${drawingId}`);
+        if (!response.ok) throw new Error("Load failed");
+
+        const { data } = await response.json();
+
+        // Restore elements and state
+        const elements = restoreElements(data.elements, null, {
+          repairBindings: true,
+        });
+        const appState = restoreAppState(data.appState, null);
+
+        setInitialData({
+          elements,
+          appState,
+          files: data.files || {},
+        });
+      } catch (error) {
+        console.error("Failed to load:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDrawing();
+  }, [drawingId]);
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return <Excalidraw initialData={initialData} />;
+}
+```
+
+## Image Files with Embedded Data
+
+### Save as PNG with Scene Data
+
+Embed scene data in PNG exports:
+
+```jsx
+import { exportToBlob, serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleSaveWithEmbedding = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const files = excalidrawAPI.getFiles();
+    const appState = {
+      ...excalidrawAPI.getAppState(),
+      exportEmbedScene: true, // Enable scene embedding
+    };
+
+    // Export with embedded scene data
+    const blob = await exportToBlob({
+      elements,
+      appState,
+      files,
+      mimeType: "image/png",
+    });
+
+    // Download editable PNG
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "drawing.excalidraw.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleSaveWithEmbedding}>Save Editable PNG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+From `packages/utils/src/export.ts:140-157`, when `exportEmbedScene` is true, the scene data is encoded as PNG metadata, allowing the image to be loaded back into Excalidraw.
+</Tip>
+
+## Binary Files
+
+### Managing Image Files
+
+Handle binary image files in drawings:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState, useCallback } from "react";
+
+function App() {
+  const [files, setFiles] = useState({});
+
+  const handleChange = useCallback((elements, appState, files) => {
+    // Store files separately
+    setFiles(files);
+
+    // Save elements and appState
+    const data = {
+      elements,
+      appState,
+      // Don't store files in localStorage - they're too large
+    };
+    localStorage.setItem("excalidraw-data", JSON.stringify(data));
+  }, []);
+
+  return (
+    <Excalidraw
+      onChange={handleChange}
+      initialData={{
+        files, // Restore files
+      }}
+    />
+  );
+}
+```
+
+### File ID Generation
+
+Generate unique IDs for files:
+
+```jsx
+import { generateIdFromFile } from "@excalidraw/excalidraw";
+
+const handleFileUpload = async (file) => {
+  // Generate unique file ID based on content
+  const fileId = await generateIdFromFile(file);
+  console.log("File ID:", fileId);
+};
+```
+
+<Note>
+From `packages/excalidraw/data/blob.ts:259-271`, `generateIdFromFile` creates a SHA-1 hash of the file content for consistent IDs.
+</Note>
+
+## Library Storage
+
+### Save Library Items
+
+Persist custom library items:
+
+```jsx
+import { Excalidraw, serializeLibraryAsJSON } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const handleLibraryChange = (libraryItems) => {
+    // Serialize library
+    const json = serializeLibraryAsJSON(libraryItems);
+    
+    // Save to storage
+    localStorage.setItem("excalidraw-library", json);
+  };
+
+  return (
+    <Excalidraw onLibraryChange={handleLibraryChange} />
+  );
+}
+```
+
+### Load Library Items
+
+Restore library items:
+
+```jsx
+import {
+  Excalidraw,
+  restoreLibraryItems,
+} from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [libraryItems, setLibraryItems] = useState([]);
+
+  useEffect(() => {
+    // Load library from storage
+    try {
+      const saved = localStorage.getItem("excalidraw-library");
+      if (saved) {
+        const data = JSON.parse(saved);
+        const items = restoreLibraryItems(data.libraryItems, "unpublished");
+        setLibraryItems(items);
+      }
+    } catch (error) {
+      console.error("Failed to load library:", error);
+    }
+  }, []);
+
+  return (
+    <Excalidraw
+      initialData={{
+        libraryItems,
+      }}
+    />
+  );
+}
+```
+
+## Complete Storage Example
+
+### Full Persistence Implementation
+
+```jsx
+import {
+  Excalidraw,
+  serializeAsJSON,
+  restoreElements,
+  restoreAppState,
+  serializeLibraryAsJSON,
+  restoreLibraryItems,
+} from "@excalidraw/excalidraw";
+import { useState, useEffect, useCallback, useRef } from "react";
+
+const STORAGE_KEYS = {
+  SCENE: "excalidraw-scene",
+  LIBRARY: "excalidraw-library",
+};
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [initialData, setInitialData] = useState(null);
+  const saveTimeoutRef = useRef(null);
+
+  // Load on mount
+  useEffect(() => {
+    const loadData = () => {
+      try {
+        // Load scene
+        const sceneData = localStorage.getItem(STORAGE_KEYS.SCENE);
+        if (sceneData) {
+          const data = JSON.parse(sceneData);
+          const elements = restoreElements(data.elements || [], null, {
+            repairBindings: true,
+          });
+          const appState = restoreAppState(data.appState || {}, null);
+
+          setInitialData({
+            elements,
+            appState,
+            files: data.files || {},
+          });
+        }
+
+        // Load library
+        const libraryData = localStorage.getItem(STORAGE_KEYS.LIBRARY);
+        if (libraryData) {
+          const data = JSON.parse(libraryData);
+          const items = restoreLibraryItems(data.libraryItems || [], "unpublished");
+          setInitialData((prev) => ({
+            ...prev,
+            libraryItems: items,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Auto-save scene
+  const handleChange = useCallback((elements, appState, files) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      const data = serializeAsJSON(elements, appState, files, "local");
+      localStorage.setItem(STORAGE_KEYS.SCENE, data);
+    }, 1000);
+  }, []);
+
+  // Save library
+  const handleLibraryChange = useCallback((libraryItems) => {
+    const json = serializeLibraryAsJSON(libraryItems);
+    localStorage.setItem(STORAGE_KEYS.LIBRARY, json);
+  }, []);
+
+  // Manual save
+  const handleSave = () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    const data = serializeAsJSON(elements, appState, files, "local");
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `drawing-${Date.now()}.excalidraw`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!initialData) return <div>Loading...</div>;
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "10px", background: "#f0f0f0" }}>
+        <button onClick={handleSave}>Download File</button>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          initialData={initialData}
+          onChange={handleChange}
+          onLibraryChange={handleLibraryChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Export" icon="download" href="/guides/export">
+    Learn about exporting to different formats
+  </Card>
+  <Card title="Embedding" icon="code" href="/guides/embedding">
+    Integrate persistence in embedded apps
+  </Card>
+  <Card title="Customization" icon="sliders" href="/guides/customization">
+    Customize save/load UI
+  </Card>
+  <Card title="i18n" icon="language" href="/guides/i18n">
+    Localize storage messages
+  </Card>
+</CardGroup>

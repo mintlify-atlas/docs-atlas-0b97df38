@@ -1,0 +1,167 @@
+---
+title: Get Started with Excalidraw
+description: Build beautiful hand-drawn diagrams with the open-source Excalidraw React component library
+---
+
+<img
+  className="block dark:hidden"
+  src="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2.png"
+  alt="Excalidraw"
+/>
+<img
+  className="hidden dark:block"
+  src="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2_dark.png"
+  alt="Excalidraw"
+/>
+
+## Welcome to Excalidraw
+
+Excalidraw is an **open source virtual hand-drawn style whiteboard** that you can embed directly into your React applications. It's collaborative, end-to-end encrypted, and designed to make creating diagrams feel natural and intuitive.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started by installing the Excalidraw npm package in your project
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Build your first drawing canvas in just 5 minutes
+  </Card>
+  <Card title="API Reference" icon="code" href="/api">
+    Explore the complete API documentation and component props
+  </Card>
+  <Card title="Integration Guide" icon="puzzle-piece" href="/integration">
+    Learn advanced integration patterns and customization options
+  </Card>
+</CardGroup>
+
+## What is Excalidraw?
+
+Excalidraw is a React component library that provides a complete whiteboard experience with a hand-drawn aesthetic. Originally built as a standalone web application at [excalidraw.com](https://excalidraw.com), the library allows developers to embed the same powerful drawing capabilities into their own applications.
+
+<Note>
+  Excalidraw takes **100% of the width and height** of its containing block, so make sure the container has non-zero dimensions.
+</Note>
+
+## Key Features
+
+Excalidraw comes packed with features that make it perfect for diagrams, wireframes, and collaborative whiteboarding:
+
+<CardGroup cols={2}>
+  <Card title="Free & Open Source" icon="heart">
+    MIT licensed and completely free to use in any project
+  </Card>
+  <Card title="Infinite Canvas" icon="expand">
+    Canvas-based whiteboard with unlimited drawing space
+  </Card>
+  <Card title="Hand-Drawn Style" icon="pen-fancy">
+    Beautiful sketch-like aesthetic powered by Rough.js
+  </Card>
+  <Card title="Dark Mode" icon="moon">
+    Built-in dark mode support with theme customization
+  </Card>
+  <Card title="Rich Drawing Tools" icon="shapes">
+    Rectangle, circle, diamond, arrow, line, free-draw, eraser, and more
+  </Card>
+  <Card title="Image Support" icon="image">
+    Import and manipulate images directly on the canvas
+  </Card>
+  <Card title="Export Options" icon="file-export">
+    Export to PNG, SVG, clipboard, or .excalidraw JSON format
+  </Card>
+  <Card title="Customizable UI" icon="sliders">
+    Extensive customization options for UI elements and behavior
+  </Card>
+  <Card title="Localization" icon="globe">
+    Built-in internationalization (i18n) support
+  </Card>
+  <Card title="Shape Libraries" icon="book">
+    Load and manage custom shape libraries
+  </Card>
+  <Card title="Arrow Binding" icon="link">
+    Smart arrows that bind to shapes with labeled support
+  </Card>
+  <Card title="Zoom & Pan" icon="magnifying-glass">
+    Smooth zooming and panning for large diagrams
+  </Card>
+</CardGroup>
+
+## Who Uses Excalidraw?
+
+Excalidraw is trusted by leading companies and integrated into popular developer tools:
+
+- **Google Cloud** - Architecture diagrams
+- **Meta** - Internal tools and documentation
+- **CodeSandbox** - Visual programming tools
+- **Notion** - Embedded drawing canvas
+- **Replit** - Interactive diagrams
+- **Obsidian** - Note-taking and knowledge management
+- **HackerRank** - Technical interviews and problem solving
+
+<Tip>
+  Check out the [Obsidian Excalidraw plugin](https://github.com/zsviczian/obsidian-excalidraw-plugin) to see an advanced integration example!
+</Tip>
+
+## Quick Example
+
+Here's a minimal example of embedding Excalidraw in a React application:
+
+```tsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+export default function App() {
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+```
+
+## Package Information
+
+<CardGroup cols={3}>
+  <Card title="Current Version" icon="tag">
+    v0.18.0
+  </Card>
+  <Card title="React Support" icon="react">
+    React 17, 18, and 19
+  </Card>
+  <Card title="License" icon="scale-balanced">
+    MIT License
+  </Card>
+</CardGroup>
+
+## What's Next?
+
+<Steps>
+  <Step title="Install Excalidraw">
+    Follow our [installation guide](/installation) to add Excalidraw to your project using npm or yarn.
+  </Step>
+  <Step title="Build Your First Canvas">
+    Jump into the [quick start guide](/quickstart) and create a working drawing canvas in minutes.
+  </Step>
+  <Step title="Customize & Extend">
+    Explore the [API documentation](/api) to customize the UI, handle events, and add advanced features.
+  </Step>
+</Steps>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/excalidraw/excalidraw/issues">
+    Report bugs or request features
+  </Card>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/UexuTaE">
+    Join our active Discord community
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/contributing">
+    Learn how to contribute to Excalidraw
+  </Card>
+  <Card title="Twitter" icon="twitter" href="https://twitter.com/excalidraw">
+    Follow @excalidraw for updates
+  </Card>
+</CardGroup>
+
+<Note>
+  Looking to run Excalidraw locally for development? Check out our [Development Guide](/development) instead of this installation guide.
+</Note>

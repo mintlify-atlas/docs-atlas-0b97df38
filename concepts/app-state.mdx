@@ -1,0 +1,558 @@
+---
+title: "Application State"
+description: "Understanding Excalidraw's AppState structure, lifecycle, and state management patterns"
+---
+
+## Overview
+
+The `AppState` is a comprehensive interface that represents the entire UI and editor state of an Excalidraw instance. It manages everything from the currently active tool and selected elements to zoom levels, theme preferences, and dialog visibility.
+
+## AppState Structure
+
+The AppState contains over 100 properties organized into logical categories:
+
+```typescript packages/excalidraw/types.ts
+interface AppState {
+  // Tool and interaction state
+  activeTool: ActiveTool;
+  editingTextElement: NonDeletedExcalidrawElement | null;
+  resizingElement: NonDeletedExcalidrawElement | null;
+  multiElement: NonDeleted<ExcalidrawLinearElement> | null;
+  
+  // Selection state
+  selectedElementIds: Readonly<{ [id: string]: true }>;
+  selectedGroupIds: { [groupId: string]: boolean };
+  editingGroupId: GroupId | null;
+  
+  // View state
+  zoom: Zoom;
+  scrollX: number;
+  scrollY: number;
+  viewBackgroundColor: string;
+  theme: Theme;
+  
+  // UI state
+  openDialog: OpenDialog | null;
+  openMenu: "canvas" | null;
+  openPopup: OpenPopup | null;
+  openSidebar: { name: SidebarName; tab?: SidebarTabName } | null;
+  
+  // Canvas dimensions
+  width: number;
+  height: number;
+  offsetTop: number;
+  offsetLeft: number;
+  
+  // Collaboration state
+  collaborators: Map<SocketId, Collaborator>;
+  userToFollow: UserToFollow | null;
+  
+  // ... and many more properties
+}
+```
+
+## Core State Categories
+
+<Tabs>
+  <Tab title="Tool State">
+    Manages the currently active tool and its configuration:
+
+    ```typescript packages/excalidraw/types.ts
+    type ActiveTool =
+      | { type: ToolType; customType: null }
+      | { type: "custom"; customType: string };
+
+    interface AppState {
+      activeTool: {
+        type: ToolType;
+        customType: string | null;
+        locked: boolean;
+        fromSelection: boolean;
+        lastActiveTool: ActiveTool | null;
+      };
+      preferredSelectionTool: {
+        type: "selection" | "lasso";
+        initialized: boolean;
+      };
+      penMode: boolean;
+      penDetected: boolean;
+    }
+    ```
+
+    <Accordion title="Available Tool Types">
+      ```typescript
+      type ToolType =
+        | "selection"
+        | "lasso"
+        | "rectangle"
+        | "diamond"
+        | "ellipse"
+        | "arrow"
+        | "line"
+        | "freedraw"
+        | "text"
+        | "image"
+        | "eraser"
+        | "hand"
+        | "frame"
+        | "magicframe"
+        | "embeddable"
+        | "laser";
+      ```
+    </Accordion>
+  </Tab>
+
+  <Tab title="Selection State">
+    Tracks which elements and groups are currently selected:
+
+    ```typescript packages/excalidraw/types.ts
+    interface AppState {
+      selectedElementIds: Readonly<{ [id: string]: true }>;
+      hoveredElementIds: Readonly<{ [id: string]: true }>;
+      previousSelectedElementIds: { [id: string]: true };
+      selectedGroupIds: { [groupId: string]: boolean };
+      editingGroupId: GroupId | null;
+      selectedElementsAreBeingDragged: boolean;
+    }
+    ```
+
+    <Note>
+      Selected element IDs are stored as an object (set) for O(1) lookup performance rather than an array.
+    </Note>
+  </Tab>
+
+  <Tab title="View State">
+    Controls the viewport, zoom, and visual presentation:
+
+    ```typescript packages/excalidraw/types.ts
+    type NormalizedZoomValue = number & { _brand: "normalizedZoom" };
+
+    type Zoom = Readonly<{
+      value: NormalizedZoomValue;
+    }>;
+
+    interface AppState {
+      zoom: Zoom;
+      scrollX: number;
+      scrollY: number;
+      viewBackgroundColor: string;
+      theme: Theme;  // "light" | "dark"
+      zenModeEnabled: boolean;
+      viewModeEnabled: boolean;
+      gridModeEnabled: boolean;
+      gridSize: number;
+      gridStep: number;
+    }
+    ```
+  </Tab>
+
+  <Tab title="Element Creation State">
+    Manages elements being created or edited:
+
+    ```typescript packages/excalidraw/types.ts
+    interface AppState {
+      newElement: NonDeleted<ExcalidrawNonSelectionElement> | null;
+      resizingElement: NonDeletedExcalidrawElement | null;
+      multiElement: NonDeleted<ExcalidrawLinearElement> | null;
+      selectionElement: NonDeletedExcalidrawElement | null;
+      editingTextElement: NonDeletedExcalidrawElement | null;
+      startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
+      suggestedBinding: {
+        element: NonDeleted<ExcalidrawBindableElement>;
+        midPoint?: GlobalPoint;
+      } | null;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Default App State
+
+Excalidraw provides a `getDefaultAppState()` function that initializes all properties:
+
+```typescript packages/excalidraw/appState.ts
+import { getDefaultAppState } from "@excalidraw/excalidraw";
+
+const defaultState = getDefaultAppState();
+// Returns AppState with all properties initialized to defaults
+```
+
+<Accordion title="Key Default Values">
+  ```typescript
+  {
+    theme: "light",
+    activeTool: { type: "selection", customType: null, locked: false },
+    zoom: { value: 1 },
+    scrollX: 0,
+    scrollY: 0,
+    currentItemStrokeColor: "#000000",
+    currentItemBackgroundColor: "#ffffff",
+    currentItemFillStyle: "hachure",
+    currentItemStrokeWidth: 2,
+    currentItemRoughness: 1,
+    currentItemOpacity: 100,
+    gridSize: 20,
+    gridModeEnabled: false,
+    selectedElementIds: {},
+    zenModeEnabled: false,
+    viewModeEnabled: false,
+    // ... and more
+  }
+  ```
+</Accordion>
+
+## Style Properties
+
+AppState stores default styles that apply to newly created elements:
+
+```typescript packages/excalidraw/types.ts
+interface AppState {
+  // Colors
+  currentItemStrokeColor: string;
+  currentItemBackgroundColor: string;
+  currentHoveredFontFamily: FontFamilyValues | null;
+  
+  // Stroke
+  currentItemStrokeWidth: number;
+  currentItemStrokeStyle: ExcalidrawElement["strokeStyle"];
+  
+  // Fill and appearance
+  currentItemFillStyle: ExcalidrawElement["fillStyle"];
+  currentItemRoughness: number;
+  currentItemOpacity: number;
+  currentItemRoundness: StrokeRoundness;
+  
+  // Text
+  currentItemFontFamily: FontFamilyValues;
+  currentItemFontSize: number;
+  currentItemTextAlign: TextAlign;
+  
+  // Arrows
+  currentItemStartArrowhead: Arrowhead | null;
+  currentItemEndArrowhead: Arrowhead | null;
+  currentItemArrowType: "sharp" | "round" | "elbow";
+}
+```
+
+## UI State Management
+
+### Dialogs and Menus
+
+```typescript packages/excalidraw/types.ts
+interface AppState {
+  openDialog:
+    | null
+    | { name: "imageExport" | "help" | "jsonExport" }
+    | { name: "ttd"; tab: "text-to-diagram" | "mermaid" }
+    | { name: "commandPalette" }
+    | { name: "settings" }
+    | { name: "elementLinkSelector"; sourceElementId: string };
+  
+  openMenu: "canvas" | null;
+  
+  openPopup:
+    | "canvasBackground"
+    | "elementBackground"
+    | "elementStroke"
+    | "fontFamily"
+    | "compactTextProperties"
+    | "compactStrokeStyles"
+    | "compactOtherProperties"
+    | "compactArrowProperties"
+    | null;
+  
+  openSidebar: { name: SidebarName; tab?: SidebarTabName } | null;
+  
+  contextMenu: {
+    items: ContextMenuItems;
+    top: number;
+    left: number;
+  } | null;
+}
+```
+
+### Toast Notifications
+
+```typescript
+interface AppState {
+  toast: {
+    message: string;
+    closable?: boolean;
+    duration?: number;
+  } | null;
+}
+```
+
+## Collaboration State
+
+```typescript packages/excalidraw/types.ts
+type SocketId = string & { _brand: "SocketId" };
+
+type Collaborator = Readonly<{
+  pointer?: CollaboratorPointer;
+  button?: "up" | "down";
+  selectedElementIds?: AppState["selectedElementIds"];
+  username?: string | null;
+  userState?: UserIdleState;
+  color?: { background: string; stroke: string };
+  avatarUrl?: string;
+  id?: string;
+  socketId?: SocketId;
+  isCurrentUser?: boolean;
+  isInCall?: boolean;
+  isSpeaking?: boolean;
+  isMuted?: boolean;
+}>;
+
+interface AppState {
+  collaborators: Map<SocketId, Collaborator>;
+  userToFollow: UserToFollow | null;
+  followedBy: Set<SocketId>;
+}
+```
+
+## State Persistence
+
+Excalidraw provides functions to filter AppState for different storage contexts:
+
+```typescript packages/excalidraw/appState.ts
+import {
+  clearAppStateForLocalStorage,
+  cleanAppStateForExport,
+  clearAppStateForDatabase,
+} from "@excalidraw/excalidraw";
+
+// For localStorage (browser storage)
+const browserState = clearAppStateForLocalStorage(appState);
+// Keeps: theme, zoom, scroll, tool preferences, grid settings
+// Removes: temporary UI state, collaborators, dialogs
+
+// For file export (.excalidraw files)
+const exportState = cleanAppStateForExport(appState);
+// Keeps: viewBackgroundColor, grid settings, locked selections
+// Removes: UI state, user preferences, viewport position
+
+// For server/database storage
+const serverState = clearAppStateForDatabase(appState);
+// Similar to export, but optimized for server storage
+```
+
+<Accordion title="Storage Configuration">
+  The storage behavior is controlled by `APP_STATE_STORAGE_CONF` in `appState.ts`:
+
+  ```typescript
+  const APP_STATE_STORAGE_CONF = {
+    theme: { browser: true, export: false, server: false },
+    zoom: { browser: true, export: false, server: false },
+    viewBackgroundColor: { browser: true, export: true, server: true },
+    gridModeEnabled: { browser: true, export: true, server: true },
+    // ... configuration for all 100+ properties
+  };
+  ```
+</Accordion>
+
+## Canvas State Types
+
+Excalidraw defines specialized AppState subsets for different rendering contexts:
+
+### Static Canvas State
+
+```typescript packages/excalidraw/types.ts
+type StaticCanvasAppState = Readonly<
+  _CommonCanvasAppState & {
+    shouldCacheIgnoreZoom: boolean;
+    viewBackgroundColor: string | null;
+    exportScale: number;
+    selectedElementsAreBeingDragged: boolean;
+    gridSize: number;
+    gridStep: number;
+    frameRendering: FrameRendering;
+    currentHoveredFontFamily: FontFamilyValues | null;
+    hoveredElementIds: AppState["hoveredElementIds"];
+    suggestedBinding: AppState["suggestedBinding"];
+    croppingElementId: string | null;
+  }
+>;
+```
+
+### Interactive Canvas State
+
+```typescript packages/excalidraw/types.ts
+type InteractiveCanvasAppState = Readonly<
+  _CommonCanvasAppState & {
+    activeEmbeddable: AppState["activeEmbeddable"];
+    selectionElement: AppState["selectionElement"];
+    selectedGroupIds: AppState["selectedGroupIds"];
+    selectedLinearElement: AppState["selectedLinearElement"];
+    multiElement: AppState["multiElement"];
+    newElement: AppState["newElement"];
+    isBindingEnabled: boolean;
+    suggestedBinding: AppState["suggestedBinding"];
+    isRotating: boolean;
+    collaborators: Map<SocketId, Collaborator>;
+    snapLines: readonly SnapLine[];
+    zenModeEnabled: boolean;
+    editingTextElement: AppState["editingTextElement"];
+    // ... and more
+  }
+>;
+```
+
+<Note>
+  These specialized types ensure that rendering functions only access the state properties they need.
+</Note>
+
+## Helper Functions
+
+```typescript packages/excalidraw/appState.ts
+import { isEraserActive, isHandToolActive } from "@excalidraw/excalidraw";
+
+// Check if eraser tool is active
+if (isEraserActive({ activeTool: appState.activeTool })) {
+  // Eraser-specific logic
+}
+
+// Check if hand tool is active
+if (isHandToolActive({ activeTool: appState.activeTool })) {
+  // Hand tool logic (panning)
+}
+```
+
+## Updating App State
+
+When using the Excalidraw component, update state through the imperative API:
+
+```typescript
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw";
+
+const excalidrawAPI = useRef<ExcalidrawImperativeAPI>(null);
+
+// Get current state
+const currentState = excalidrawAPI.current.getAppState();
+
+// Update state through scene update
+excalidrawAPI.current.updateScene({
+  appState: {
+    theme: "dark",
+    zoom: { value: 1.5 },
+    viewBackgroundColor: "#1a1a1a",
+  },
+});
+```
+
+<Warning>
+  Never mutate AppState directly. Always create new state objects or use the updateScene API.
+</Warning>
+
+## Observable App State
+
+For performance optimization, Excalidraw tracks observable state that external components may need to react to:
+
+```typescript packages/excalidraw/types.ts
+type ObservedAppState = ObservedStandaloneAppState & ObservedElementsAppState;
+
+type ObservedStandaloneAppState = {
+  name: AppState["name"];
+  viewBackgroundColor: AppState["viewBackgroundColor"];
+};
+
+type ObservedElementsAppState = {
+  editingGroupId: AppState["editingGroupId"];
+  selectedElementIds: AppState["selectedElementIds"];
+  selectedGroupIds: AppState["selectedGroupIds"];
+  selectedLinearElement: {
+    elementId: string;
+    isEditing: boolean;
+  } | null;
+  croppingElementId: AppState["croppingElementId"];
+  lockedMultiSelections: AppState["lockedMultiSelections"];
+  activeLockedId: AppState["activeLockedId"];
+};
+```
+
+## Frame Rendering State
+
+```typescript
+interface AppState {
+  frameRendering: {
+    enabled: boolean;  // Whether to render frames at all
+    name: boolean;     // Show frame names
+    outline: boolean;  // Show frame outlines
+    clip: boolean;     // Clip elements to frame bounds
+  };
+  frameToHighlight: NonDeleted<ExcalidrawFrameLikeElement> | null;
+  editingFrame: string | null;
+}
+```
+
+## Search and Navigation State
+
+```typescript packages/excalidraw/types.ts
+type SearchMatch = {
+  id: string;
+  focus: boolean;
+  matchedLines: {
+    offsetX: number;
+    offsetY: number;
+    width: number;
+    height: number;
+    showOnCanvas: boolean;
+  }[];
+};
+
+interface AppState {
+  searchMatches: Readonly<{
+    focusedId: ExcalidrawElement["id"] | null;
+    matches: readonly SearchMatch[];
+  }> | null;
+}
+```
+
+## Cropping State
+
+```typescript
+interface AppState {
+  isCropping: boolean;
+  croppingElementId: ExcalidrawElement["id"] | null;
+}
+```
+
+## Export State
+
+```typescript
+interface AppState {
+  exportBackground: boolean;
+  exportEmbedScene: boolean;
+  exportWithDarkMode: boolean;
+  exportScale: number;
+}
+```
+
+## Best Practices
+
+<Accordion title="State Updates">
+  - Always create new state objects rather than mutating existing ones
+  - Use the `updateScene` API for state changes that should trigger re-renders
+  - Batch multiple state changes in a single `updateScene` call
+  - Filter state appropriately when persisting to storage
+</Accordion>
+
+<Accordion title="Performance">
+  - Use specialized canvas state types to minimize re-renders
+  - Subscribe to observable state changes only for necessary UI updates
+  - Avoid deep state comparisons in hot paths
+  - Use memoization for derived state calculations
+</Accordion>
+
+<Accordion title="Collaboration">
+  - Never store local UI state in collaboration sync
+  - Keep collaborator data lightweight
+  - Use proper socket ID typing for type safety
+  - Handle collaborator state cleanup on disconnect
+</Accordion>
+
+## Related Concepts
+
+- [Elements](/concepts/elements) - Element structure and management
+- [Scene](/concepts/scene) - Scene state management and element collections
+- [Collaboration](/concepts/collaboration) - Multi-user state synchronization

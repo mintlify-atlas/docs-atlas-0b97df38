@@ -1,0 +1,366 @@
+---
+title: ExcalidrawProps
+description: Complete API reference for Excalidraw component props
+---
+
+# ExcalidrawProps
+
+Complete reference for all props accepted by the `<Excalidraw />` component.
+
+## Event Handlers
+
+<ParamField path="onChange" type="function">
+  Called whenever elements, appState, or files change.
+  
+  ```typescript
+  (elements: readonly OrderedExcalidrawElement[], 
+   appState: AppState, 
+   files: BinaryFiles) => void
+  ```
+</ParamField>
+
+<ParamField path="onIncrement" type="function">
+  Called for incremental updates to optimize performance in collaborative scenarios.
+  
+  ```typescript
+  (event: DurableIncrement | EphemeralIncrement) => void
+  ```
+</ParamField>
+
+<ParamField path="onPointerUpdate" type="function">
+  Called when pointer position or state changes.
+  
+  ```typescript
+  (payload: {
+    pointer: { x: number; y: number; tool: "pointer" | "laser" };
+    button: "down" | "up";
+    pointersMap: Gesture["pointers"];
+  }) => void
+  ```
+</ParamField>
+
+<ParamField path="onPaste" type="function">
+  Custom paste handler. Return `true` to prevent default paste behavior.
+  
+  ```typescript
+  (data: ClipboardData, event: ClipboardEvent | null) => Promise<boolean> | boolean
+  ```
+</ParamField>
+
+<ParamField path="onDuplicate" type="function">
+  Called when elements are duplicated (via mouse-drag, keyboard, paste, library insert, etc.).
+  
+  Return modified elements to override the default duplication behavior. You should return all elements including deleted ones, and avoid mutating the original elements.
+  
+  ```typescript
+  (nextElements: readonly ExcalidrawElement[],
+   prevElements: readonly ExcalidrawElement[]) => ExcalidrawElement[] | void
+  ```
+</ParamField>
+
+<ParamField path="onPointerDown" type="function">
+  Called when pointer down event occurs.
+  
+  ```typescript
+  (activeTool: AppState["activeTool"],
+   pointerDownState: PointerDownState) => void
+  ```
+</ParamField>
+
+<ParamField path="onPointerUp" type="function">
+  Called when pointer up event occurs.
+  
+  ```typescript
+  (activeTool: AppState["activeTool"],
+   pointerDownState: PointerDownState) => void
+  ```
+</ParamField>
+
+<ParamField path="onScrollChange" type="function">
+  Called when canvas scroll position or zoom changes.
+  
+  ```typescript
+  (scrollX: number, scrollY: number, zoom: Zoom) => void
+  ```
+</ParamField>
+
+<ParamField path="onUserFollow" type="function">
+  Called when a user starts or stops following another user in collaboration mode.
+  
+  ```typescript
+  (payload: {
+    userToFollow: { socketId: SocketId; username: string };
+    action: "FOLLOW" | "UNFOLLOW";
+  }) => void
+  ```
+</ParamField>
+
+<ParamField path="onLibraryChange" type="function">
+  Called when the library items change.
+  
+  ```typescript
+  (libraryItems: LibraryItems) => void | Promise<any>
+  ```
+</ParamField>
+
+<ParamField path="onLinkOpen" type="function">
+  Called when a link on an element is clicked.
+  
+  ```typescript
+  (element: NonDeletedExcalidrawElement,
+   event: CustomEvent<{
+     nativeEvent: MouseEvent | React.PointerEvent<HTMLCanvasElement>
+   }>) => void
+  ```
+</ParamField>
+
+## Initial State
+
+<ParamField path="initialData" type="ExcalidrawInitialDataState | (() => Promise<ExcalidrawInitialDataState | null>) | null">
+  Initial data to populate the canvas. Can be a static object, a Promise, or a function returning a Promise.
+  
+  See [InitialData](/api/initial-data) for the complete structure.
+  
+  <Expandable title="Example">
+    ```typescript
+    initialData={{
+      elements: [
+        {
+          type: "rectangle",
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 100,
+          // ... other properties
+        }
+      ],
+      appState: {
+        viewBackgroundColor: "#ffffff",
+        currentItemStrokeColor: "#000000",
+      },
+      files: {},
+    }}
+    ```
+  </Expandable>
+</ParamField>
+
+## API Access
+
+<ParamField path="excalidrawAPI" type="function">
+  Callback that receives the Excalidraw imperative API instance. Use this to access methods for programmatic control.
+  
+  ```typescript
+  (api: ExcalidrawImperativeAPI) => void
+  ```
+  
+  <Expandable title="Example">
+    ```typescript
+    const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+    
+    <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    
+    // Later, use the API
+    excalidrawAPI?.updateScene({ elements: [...] });
+    ```
+  </Expandable>
+</ParamField>
+
+## Collaboration
+
+<ParamField path="isCollaborating" type="boolean" default="false">
+  Indicates whether collaboration mode is active. Enables collaboration-specific UI features.
+</ParamField>
+
+## Custom Rendering
+
+<ParamField path="renderTopLeftUI" type="function">
+  Custom UI renderer for the top-left corner of the canvas.
+  
+  ```typescript
+  (isMobile: boolean, appState: UIAppState) => JSX.Element | null
+  ```
+</ParamField>
+
+<ParamField path="renderTopRightUI" type="function">
+  Custom UI renderer for the top-right corner of the canvas.
+  
+  ```typescript
+  (isMobile: boolean, appState: UIAppState) => JSX.Element | null
+  ```
+</ParamField>
+
+<ParamField path="renderCustomStats" type="function">
+  Custom stats panel renderer.
+  
+  ```typescript
+  (elements: readonly NonDeletedExcalidrawElement[],
+   appState: UIAppState) => JSX.Element
+  ```
+</ParamField>
+
+<ParamField path="renderEmbeddable" type="function">
+  Custom renderer for embeddable elements (iframes, embeds).
+  
+  ```typescript
+  (element: NonDeleted<ExcalidrawEmbeddableElement>,
+   appState: AppState) => JSX.Element | null
+  ```
+</ParamField>
+
+## Editor State
+
+<ParamField path="viewModeEnabled" type="boolean" default="false">
+  When `true`, enables view-only mode. Users cannot edit the canvas.
+</ParamField>
+
+<ParamField path="zenModeEnabled" type="boolean" default="false">
+  When `true`, enables zen mode which hides the UI for a distraction-free experience.
+</ParamField>
+
+<ParamField path="gridModeEnabled" type="boolean" default="false">
+  When `true`, enables the grid on the canvas.
+</ParamField>
+
+<ParamField path="objectsSnapModeEnabled" type="boolean" default="false">
+  When `true`, enables snapping objects to other objects and guides.
+</ParamField>
+
+<ParamField path="theme" type="'light' | 'dark'" default="'light'">
+  The visual theme of the editor.
+</ParamField>
+
+<ParamField path="name" type="string">
+  The name of the drawing. Displayed in the UI and used as the default filename for exports.
+</ParamField>
+
+## Localization
+
+<ParamField path="langCode" type="string">
+  Language code for the UI. Supports multiple languages.
+  
+  Examples: `"en"`, `"es"`, `"fr"`, `"de"`, `"zh-CN"`, `"ja"`, etc.
+</ParamField>
+
+## UI Configuration
+
+<ParamField path="UIOptions" type="Partial<UIOptions>">
+  Configuration object for UI features and canvas actions.
+  
+  See [UIOptions](/api/ui-options) for the complete reference.
+  
+  <Expandable title="Example">
+    ```typescript
+    UIOptions={{
+      canvasActions: {
+        changeViewBackgroundColor: false,
+        clearCanvas: false,
+        export: { saveFileToDisk: false },
+        loadScene: false,
+        saveToActiveFile: false,
+        toggleTheme: true,
+        saveAsImage: true,
+      },
+      tools: {
+        image: false,
+      },
+    }}
+    ```
+  </Expandable>
+</ParamField>
+
+## Interaction
+
+<ParamField path="detectScroll" type="boolean" default="true">
+  When `true`, enables automatic scroll detection when the user drags elements near the edge of the viewport.
+</ParamField>
+
+<ParamField path="handleKeyboardGlobally" type="boolean" default="false">
+  When `true`, Excalidraw keyboard shortcuts work even when the canvas is not focused.
+</ParamField>
+
+<ParamField path="autoFocus" type="boolean" default="false">
+  When `true`, automatically focuses the canvas on mount.
+</ParamField>
+
+<ParamField path="renderScrollbars" type="boolean" default="true">
+  When `true`, renders custom scrollbars for the canvas.
+</ParamField>
+
+## Files & Assets
+
+<ParamField path="generateIdForFile" type="function">
+  Custom ID generator for uploaded files.
+  
+  ```typescript
+  (file: File) => string | Promise<string>
+  ```
+</ParamField>
+
+<ParamField path="libraryReturnUrl" type="string">
+  URL to redirect to when closing the library. Used for custom library integrations.
+</ParamField>
+
+## Links & Embeds
+
+<ParamField path="generateLinkForSelection" type="function">
+  Generates a shareable link for the selected element or group.
+  
+  ```typescript
+  (id: string, type: "element" | "group") => string
+  ```
+</ParamField>
+
+<ParamField path="validateEmbeddable" type="boolean | string[] | RegExp | RegExp[] | ((link: string) => boolean | undefined)">
+  Validates whether a URL can be embedded in the canvas.
+  
+  - `boolean`: Enable/disable all embeds
+  - `string[]`: Whitelist of allowed domains
+  - `RegExp | RegExp[]`: Pattern(s) to match allowed URLs
+  - `function`: Custom validation function
+  
+  <Expandable title="Examples">
+    ```typescript
+    // Disable all embeds
+    validateEmbeddable={false}
+    
+    // Whitelist specific domains
+    validateEmbeddable={["youtube.com", "vimeo.com"]}
+    
+    // Use regex pattern
+    validateEmbeddable={/^https:\/\/(www\.)?youtube\.com/}
+    
+    // Custom validator
+    validateEmbeddable={(link) => {
+      return link.startsWith("https://");
+    }}
+    ```
+  </Expandable>
+</ParamField>
+
+## Features
+
+<ParamField path="aiEnabled" type="boolean" default="true">
+  When `true`, enables AI-powered features (text-to-diagram, etc.).
+</ParamField>
+
+<ParamField path="showDeprecatedFonts" type="boolean" default="false">
+  When `true`, shows deprecated font options in the font selector.
+</ParamField>
+
+## Children
+
+<ParamField path="children" type="React.ReactNode">
+  Custom React components to render inside the Excalidraw container.
+  
+  Useful for adding custom overlays, modals, or other UI elements that need to be rendered within the Excalidraw context.
+</ParamField>
+
+## Type Definitions
+
+```typescript
+import type { ExcalidrawProps } from "@excalidraw/excalidraw";
+
+const MyComponent = (props: ExcalidrawProps) => {
+  return <Excalidraw {...props} />;
+};
+```

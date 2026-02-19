@@ -1,0 +1,499 @@
+---
+title: "Internationalization"
+description: "Add multi-language support to Excalidraw with i18n configuration"
+---
+
+## Overview
+
+Excalidraw supports over 30 languages out of the box. You can easily set the language for the editor interface, and Excalidraw handles all UI translations automatically.
+
+## Quick Start
+
+### Setting the Language
+
+Use the `langCode` prop to set the interface language:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw langCode="es-ES" />
+  );
+}
+```
+
+## Supported Languages
+
+Excalidraw includes 30+ languages with at least 85% translation completion:
+
+<CodeGroup>
+```jsx Western European
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+// English (default)
+<Excalidraw langCode="en" />
+
+// Spanish
+<Excalidraw langCode="es-ES" />
+
+// French
+<Excalidraw langCode="fr-FR" />
+
+// German
+<Excalidraw langCode="de-DE" />
+
+// Italian
+<Excalidraw langCode="it-IT" />
+
+// Portuguese (Brazil)
+<Excalidraw langCode="pt-BR" />
+
+// Portuguese (Portugal)
+<Excalidraw langCode="pt-PT" />
+```
+
+```jsx Eastern European
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+// Russian
+<Excalidraw langCode="ru-RU" />
+
+// Polish
+<Excalidraw langCode="pl-PL" />
+
+// Czech
+<Excalidraw langCode="cs-CZ" />
+
+// Ukrainian
+<Excalidraw langCode="uk-UA" />
+
+// Romanian
+<Excalidraw langCode="ro-RO" />
+
+// Hungarian
+<Excalidraw langCode="hu-HU" />
+```
+
+```jsx Asian Languages
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+// Chinese (Simplified)
+<Excalidraw langCode="zh-CN" />
+
+// Chinese (Traditional)
+<Excalidraw langCode="zh-TW" />
+
+// Japanese
+<Excalidraw langCode="ja-JP" />
+
+// Korean
+<Excalidraw langCode="ko-KR" />
+
+// Hindi
+<Excalidraw langCode="hi-IN" />
+
+// Vietnamese
+<Excalidraw langCode="vi-VN" />
+```
+
+```jsx Middle Eastern
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+// Arabic (RTL)
+<Excalidraw langCode="ar-SA" />
+
+// Hebrew (RTL)
+<Excalidraw langCode="he-IL" />
+
+// Persian (RTL)
+<Excalidraw langCode="fa-IR" />
+
+// Turkish
+<Excalidraw langCode="tr-TR" />
+```
+</CodeGroup>
+
+<Note>
+From `packages/excalidraw/i18n.ts:21-75`, only languages with at least 85% completion (defined by `COMPLETION_THRESHOLD`) are included by default.
+</Note>
+
+## Available Languages List
+
+### Importing Language Data
+
+Access the full list of supported languages:
+
+```jsx
+import { Excalidraw, languages, defaultLang } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <>
+      <select onChange={(e) => setLang(e.target.value)}>
+        {languages.map((lang) => (
+          <option key={lang.code} value={lang.code}>
+            {lang.label}
+          </option>
+        ))}
+      </select>
+      <Excalidraw langCode={lang} />
+    </>
+  );
+}
+```
+
+### Language Object Structure
+
+Each language object contains:
+
+```typescript
+interface Language {
+  code: string;    // e.g., "en", "es-ES"
+  label: string;   // e.g., "English", "Español"
+  rtl?: boolean;   // true for right-to-left languages
+}
+```
+
+Example from source (`packages/excalidraw/i18n.ts:11-15`):
+
+```typescript
+export interface Language {
+  code: string;
+  label: string;
+  rtl?: boolean;
+}
+```
+
+## Right-to-Left (RTL) Languages
+
+### RTL Support
+
+Excalidraw automatically handles RTL languages:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      langCode="ar-SA" // Arabic - automatically sets RTL
+    />
+  );
+}
+```
+
+<Tip>
+From `packages/excalidraw/i18n.ts:92-95`, when you set an RTL language, Excalidraw automatically updates `document.documentElement.dir` to `"rtl"` and sets the language attribute.
+</Tip>
+
+### Supported RTL Languages
+
+- Arabic: `ar-SA`
+- Hebrew: `he-IL`
+- Persian: `fa-IR`
+
+## Dynamic Language Switching
+
+### User Language Selector
+
+Let users choose their preferred language:
+
+```jsx
+import { Excalidraw, languages } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [langCode, setLangCode] = useState("en");
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <div style={{ padding: "10px" }}>
+        <label>
+          Language:
+          <select
+            value={langCode}
+            onChange={(e) => setLangCode(e.target.value)}
+          >
+            {languages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <Excalidraw langCode={langCode} />
+    </div>
+  );
+}
+```
+
+### Browser Language Detection
+
+Automatic language detection based on browser settings:
+
+```jsx
+import { Excalidraw, languages, defaultLang } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [langCode, setLangCode] = useState(defaultLang.code);
+
+  useEffect(() => {
+    // Get browser language
+    const browserLang = navigator.language;
+    
+    // Find matching language in supported languages
+    const matchedLang = languages.find(
+      (lang) => lang.code === browserLang || lang.code.startsWith(browserLang.split("-")[0])
+    );
+
+    if (matchedLang) {
+      setLangCode(matchedLang.code);
+    }
+  }, []);
+
+  return <Excalidraw langCode={langCode} />;
+}
+```
+
+### Persisting Language Preference
+
+Save and restore the user's language choice:
+
+```jsx
+import { Excalidraw, languages } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [langCode, setLangCode] = useState(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem("excalidraw-lang");
+    return saved || "en";
+  });
+
+  useEffect(() => {
+    // Save to localStorage when language changes
+    localStorage.setItem("excalidraw-lang", langCode);
+  }, [langCode]);
+
+  return (
+    <>
+      <select value={langCode} onChange={(e) => setLangCode(e.target.value)}>
+        {languages.map((lang) => (
+          <option key={lang.code} value={lang.code}>
+            {lang.label}
+          </option>
+        ))}
+      </select>
+      <Excalidraw langCode={langCode} />
+    </>
+  );
+}
+```
+
+## Using the i18n Hook
+
+### useI18n Hook
+
+For custom components that need translations:
+
+```jsx
+import { useI18n } from "@excalidraw/excalidraw";
+
+function CustomComponent() {
+  const { t, langCode } = useI18n();
+
+  return (
+    <div>
+      <p>Current language: {langCode}</p>
+      {/* Use t() function for translations if you have access to translation keys */}
+    </div>
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/i18n.ts:165-172`, the `useI18n` hook should be used in components rendered as Excalidraw children or memoized internal components.
+</Note>
+
+## Translation Function
+
+### Using the t() Function
+
+The translation function from the source code (`packages/excalidraw/i18n.ts:127-160`):
+
+```typescript
+export const t = (
+  path: string,
+  replacement?: { [key: string]: string | number } | null,
+  fallback?: string,
+) => {
+  // Returns translated string based on current language
+}
+```
+
+Example usage with replacements:
+
+```jsx
+// With variable replacement
+t("labels.exportedElements", { count: 5 })
+// Returns: "5 elements exported" (translated)
+
+// With fallback
+t("labels.customLabel", null, "Default text")
+// Returns: "Default text" if translation not found
+```
+
+## Advanced Configuration
+
+### Language Setting Function
+
+Programmatically set the language:
+
+```typescript
+import { setLanguage, languages } from "@excalidraw/excalidraw";
+
+// Set language (typically handled internally by Excalidraw)
+const spanish = languages.find(lang => lang.code === "es-ES");
+if (spanish) {
+  await setLanguage(spanish);
+}
+```
+
+<Warning>
+The `setLanguage` function is typically called internally by Excalidraw. Use the `langCode` prop instead for standard use cases.
+</Warning>
+
+### Default Language
+
+Get the default language:
+
+```jsx
+import { defaultLang } from "@excalidraw/excalidraw";
+
+console.log(defaultLang);
+// Output: { code: "en", label: "English" }
+```
+
+## Initial Language in AppState
+
+### Setting Initial Language
+
+You can also set the language through `initialData`:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      langCode="fr-FR"
+      initialData={{
+        appState: {
+          // Other app state properties
+        },
+      }}
+    />
+  );
+}
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Detect browser language">
+    Use `navigator.language` to detect and set the initial language.
+  </Step>
+  
+  <Step title="Provide language selector">
+    Give users an easy way to change the language.
+  </Step>
+  
+  <Step title="Persist preference">
+    Save the user's language choice to localStorage.
+  </Step>
+  
+  <Step title="Test RTL languages">
+    Ensure your custom UI components work correctly with RTL languages.
+  </Step>
+  
+  <Step title="Fallback to English">
+    Always have English as a fallback option.
+  </Step>
+</Steps>
+
+## Complete Example
+
+### Full i18n Implementation
+
+```jsx
+import { Excalidraw, languages, defaultLang } from "@excalidraw/excalidraw";
+import { useState, useEffect } from "react";
+
+function App() {
+  const [langCode, setLangCode] = useState(() => {
+    // Try to load from localStorage
+    const saved = localStorage.getItem("excalidraw-lang");
+    if (saved) return saved;
+
+    // Try to detect browser language
+    const browserLang = navigator.language;
+    const matched = languages.find(
+      (lang) => lang.code === browserLang || lang.code.startsWith(browserLang.split("-")[0])
+    );
+
+    return matched?.code || defaultLang.code;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("excalidraw-lang", langCode);
+  }, [langCode]);
+
+  const currentLang = languages.find((lang) => lang.code === langCode);
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <header style={{ padding: "10px", background: "#f0f0f0" }}>
+        <label>
+          {currentLang?.rtl ? "اللغة:" : "Language:"}
+          <select
+            value={langCode}
+            onChange={(e) => setLangCode(e.target.value)}
+            style={{ marginLeft: currentLang?.rtl ? 0 : "10px", marginRight: currentLang?.rtl ? "10px" : 0 }}
+          >
+            {languages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </header>
+      <div style={{ flex: 1 }}>
+        <Excalidraw langCode={langCode} />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Theming" icon="palette" href="/guides/theming">
+    Combine i18n with theme customization
+  </Card>
+  <Card title="Storage" icon="database" href="/guides/storage">
+    Persist language preferences
+  </Card>
+  <Card title="Customization" icon="sliders" href="/guides/customization">
+    Customize the editor interface
+  </Card>
+  <Card title="Embedding" icon="code" href="/guides/embedding">
+    Embed with language support
+  </Card>
+</CardGroup>

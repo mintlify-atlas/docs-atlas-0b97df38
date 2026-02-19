@@ -1,0 +1,585 @@
+---
+title: "Element Types"
+description: "Type definitions for all Excalidraw element types"
+---
+
+## ExcalidrawElement
+
+The base union type for all Excalidraw elements. All elements are JSON serializable and contain no computed data.
+
+```typescript
+type ExcalidrawElement =
+  | ExcalidrawGenericElement
+  | ExcalidrawTextElement
+  | ExcalidrawLinearElement
+  | ExcalidrawArrowElement
+  | ExcalidrawFreeDrawElement
+  | ExcalidrawImageElement
+  | ExcalidrawFrameElement
+  | ExcalidrawMagicFrameElement
+  | ExcalidrawIframeElement
+  | ExcalidrawEmbeddableElement
+```
+
+## Base Element Properties
+
+All element types extend from `_ExcalidrawElementBase` with these common properties:
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the element
+</ResponseField>
+
+<ResponseField name="x" type="number" required>
+  X coordinate of the element
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Y coordinate of the element
+</ResponseField>
+
+<ResponseField name="strokeColor" type="string" required>
+  Color of the element's stroke
+</ResponseField>
+
+<ResponseField name="backgroundColor" type="string" required>
+  Background color of the element
+</ResponseField>
+
+<ResponseField name="fillStyle" type="FillStyle" required>
+  Fill style: `"hachure"` | `"cross-hatch"` | `"solid"` | `"zigzag"`
+</ResponseField>
+
+<ResponseField name="strokeWidth" type="number" required>
+  Width of the element's stroke
+</ResponseField>
+
+<ResponseField name="strokeStyle" type="StrokeStyle" required>
+  Stroke style: `"solid"` | `"dashed"` | `"dotted"`
+</ResponseField>
+
+<ResponseField name="roundness" type="{ type: RoundnessType; value?: number } | null" required>
+  Roundness configuration for the element
+</ResponseField>
+
+<ResponseField name="roughness" type="number" required>
+  Roughness level for the hand-drawn effect
+</ResponseField>
+
+<ResponseField name="opacity" type="number" required>
+  Opacity of the element (0-100)
+</ResponseField>
+
+<ResponseField name="width" type="number" required>
+  Width of the element
+</ResponseField>
+
+<ResponseField name="height" type="number" required>
+  Height of the element
+</ResponseField>
+
+<ResponseField name="angle" type="Radians" required>
+  Rotation angle of the element in radians
+</ResponseField>
+
+<ResponseField name="seed" type="number" required>
+  Random integer used to seed shape generation so that the roughjs shape doesn't differ across renders
+</ResponseField>
+
+<ResponseField name="version" type="number" required>
+  Integer that is sequentially incremented on each change. Used to reconcile elements during collaboration or when saving to server
+</ResponseField>
+
+<ResponseField name="versionNonce" type="number" required>
+  Random integer that is regenerated on each change. Used for deterministic reconciliation of updates during collaboration, in case the versions are identical
+</ResponseField>
+
+<ResponseField name="index" type="FractionalIndex | null" required>
+  String in a fractional form defined by fractional-indexing. Used for ordering in multiplayer scenarios. Could be null for new elements which were not yet assigned to the scene
+</ResponseField>
+
+<ResponseField name="isDeleted" type="boolean" required>
+  Whether the element has been deleted
+</ResponseField>
+
+<ResponseField name="groupIds" type="readonly GroupId[]" required>
+  List of groups the element belongs to, ordered from deepest to shallowest
+</ResponseField>
+
+<ResponseField name="frameId" type="string | null" required>
+  ID of the frame this element belongs to, if any
+</ResponseField>
+
+<ResponseField name="boundElements" type="readonly BoundElement[] | null" required>
+  Other elements that are bound to this element
+</ResponseField>
+
+<ResponseField name="updated" type="number" required>
+  Epoch (ms) timestamp of last element update
+</ResponseField>
+
+<ResponseField name="link" type="string | null" required>
+  External link associated with this element
+</ResponseField>
+
+<ResponseField name="locked" type="boolean" required>
+  Whether the element is locked from editing
+</ResponseField>
+
+<ResponseField name="customData" type="Record<string, any>">
+  Custom metadata for the element
+</ResponseField>
+
+## Generic Elements
+
+### ExcalidrawRectangleElement
+
+Rectangle shape element.
+
+<ResponseField name="type" type="'rectangle'" required>
+  Element type identifier
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawDiamondElement
+
+Diamond shape element.
+
+<ResponseField name="type" type="'diamond'" required>
+  Element type identifier
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawEllipseElement
+
+Ellipse/circle shape element.
+
+<ResponseField name="type" type="'ellipse'" required>
+  Element type identifier
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawSelectionElement
+
+Temporary element representing a selection area.
+
+<ResponseField name="type" type="'selection'" required>
+  Element type identifier
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+## Text Element
+
+### ExcalidrawTextElement
+
+Text element with rich formatting options.
+
+<ResponseField name="type" type="'text'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="fontSize" type="number" required>
+  Font size in pixels
+</ResponseField>
+
+<ResponseField name="fontFamily" type="FontFamilyValues" required>
+  Font family identifier
+</ResponseField>
+
+<ResponseField name="text" type="string" required>
+  The text content
+</ResponseField>
+
+<ResponseField name="textAlign" type="TextAlign" required>
+  Text alignment: left, center, or right
+</ResponseField>
+
+<ResponseField name="verticalAlign" type="VerticalAlign" required>
+  Vertical alignment within container
+</ResponseField>
+
+<ResponseField name="containerId" type="string | null" required>
+  ID of the container element if text is bound to a shape
+</ResponseField>
+
+<ResponseField name="originalText" type="string" required>
+  Original text before any wrapping or formatting
+</ResponseField>
+
+<ResponseField name="autoResize" type="boolean" required default="true">
+  If `true` the width will fit the text. If `false`, the text will wrap to fit the width
+</ResponseField>
+
+<ResponseField name="lineHeight" type="number & { _brand: 'unitlessLineHeight' }" required>
+  Unitless line height (aligned to W3C). To get line height in px, multiply with font size
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+## Linear Elements
+
+### ExcalidrawLinearElement
+
+Base type for line and arrow elements.
+
+<ResponseField name="type" type="'line' | 'arrow'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="points" type="readonly LocalPoint[]" required>
+  Array of points defining the line path
+</ResponseField>
+
+<ResponseField name="startBinding" type="FixedPointBinding | null" required>
+  Binding information for the start point
+</ResponseField>
+
+<ResponseField name="endBinding" type="FixedPointBinding | null" required>
+  Binding information for the end point
+</ResponseField>
+
+<ResponseField name="startArrowhead" type="Arrowhead | null" required>
+  Arrowhead style at the start of the line
+</ResponseField>
+
+<ResponseField name="endArrowhead" type="Arrowhead | null" required>
+  Arrowhead style at the end of the line
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawLineElement
+
+Line element, can be a polyline or polygon.
+
+<ResponseField name="type" type="'line'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="polygon" type="boolean" required>
+  Whether the line forms a closed polygon
+</ResponseField>
+
+<Expandable title="Inherits all linear element properties">
+  See [ExcalidrawLinearElement](#excalidrawlinearelement) above.
+</Expandable>
+
+### ExcalidrawArrowElement
+
+Arrow element with support for different arrow types.
+
+<ResponseField name="type" type="'arrow'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="elbowed" type="boolean" required>
+  Whether the arrow uses elbow (orthogonal) routing
+</ResponseField>
+
+<Expandable title="Inherits all linear element properties">
+  See [ExcalidrawLinearElement](#excalidrawlinearelement) above.
+</Expandable>
+
+### ExcalidrawElbowArrowElement
+
+Elbow arrow with fixed segments for orthogonal routing.
+
+<ResponseField name="elbowed" type="true" required>
+  Always true for elbow arrows
+</ResponseField>
+
+<ResponseField name="fixedSegments" type="readonly FixedSegment[] | null" required>
+  Fixed segments defining the elbow path
+</ResponseField>
+
+<ResponseField name="startIsSpecial" type="boolean | null" required>
+  Marks that the 3rd point should be used as the 2nd point to temporarily hide the first segment
+</ResponseField>
+
+<ResponseField name="endIsSpecial" type="boolean | null" required>
+  Marks that the 3rd point backwards from the end should be used as the 2nd point to temporarily hide the last segment
+</ResponseField>
+
+<Expandable title="Inherits all arrow element properties">
+  See [ExcalidrawArrowElement](#excalidrawarrowelement) above.
+</Expandable>
+
+## Drawing Element
+
+### ExcalidrawFreeDrawElement
+
+Freehand drawing element.
+
+<ResponseField name="type" type="'freedraw'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="points" type="readonly LocalPoint[]" required>
+  Array of points defining the freehand path
+</ResponseField>
+
+<ResponseField name="pressures" type="readonly number[]" required>
+  Pressure values for each point (for pen input)
+</ResponseField>
+
+<ResponseField name="simulatePressure" type="boolean" required>
+  Whether to simulate pen pressure for mouse input
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+## Image Element
+
+### ExcalidrawImageElement
+
+Image element with cropping and scaling support.
+
+<ResponseField name="type" type="'image'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="fileId" type="FileId | null" required>
+  ID of the associated file in BinaryFiles
+</ResponseField>
+
+<ResponseField name="status" type="'pending' | 'saved' | 'error'" required>
+  Whether respective file is persisted
+</ResponseField>
+
+<ResponseField name="scale" type="[number, number]" required>
+  X and Y scale factors in range <-1, 1>, used for image axis flipping
+</ResponseField>
+
+<ResponseField name="crop" type="ImageCrop | null" required>
+  Cropping information if the image is cropped
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ImageCrop
+
+Defines image cropping parameters.
+
+<ResponseField name="x" type="number" required>
+  X coordinate of crop area
+</ResponseField>
+
+<ResponseField name="y" type="number" required>
+  Y coordinate of crop area
+</ResponseField>
+
+<ResponseField name="width" type="number" required>
+  Width of crop area
+</ResponseField>
+
+<ResponseField name="height" type="number" required>
+  Height of crop area
+</ResponseField>
+
+<ResponseField name="naturalWidth" type="number" required>
+  Natural width of the image
+</ResponseField>
+
+<ResponseField name="naturalHeight" type="number" required>
+  Natural height of the image
+</ResponseField>
+
+## Frame Elements
+
+### ExcalidrawFrameElement
+
+Frame element for grouping and organizing content.
+
+<ResponseField name="type" type="'frame'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="name" type="string | null" required>
+  Display name of the frame
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawMagicFrameElement
+
+Magic frame element with AI generation capabilities.
+
+<ResponseField name="type" type="'magicframe'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="name" type="string | null" required>
+  Display name of the magic frame
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+## Embeddable Elements
+
+### ExcalidrawEmbeddableElement
+
+Embeddable content element (e.g., YouTube, Figma).
+
+<ResponseField name="type" type="'embeddable'" required>
+  Element type identifier
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+### ExcalidrawIframeElement
+
+Iframe element for embedding external content.
+
+<ResponseField name="type" type="'iframe'" required>
+  Element type identifier
+</ResponseField>
+
+<ResponseField name="customData" type="{ generationData?: MagicGenerationData }">
+  Custom metadata including AI generation data
+</ResponseField>
+
+<Expandable title="Inherits all base element properties">
+  See [Base Element Properties](#base-element-properties) above.
+</Expandable>
+
+## Supporting Types
+
+### BoundElement
+
+Represents an element bound to another element.
+
+<ResponseField name="id" type="string" required>
+  ID of the bound linear element
+</ResponseField>
+
+<ResponseField name="type" type="'arrow' | 'text'" required>
+  Type of the bound element
+</ResponseField>
+
+### FixedPointBinding
+
+Binding information for arrow endpoints.
+
+<ResponseField name="elementId" type="string" required>
+  ID of the element being bound to
+</ResponseField>
+
+<ResponseField name="fixedPoint" type="[number, number]" required>
+  Fixed point as [horizontal ratio, vertical ratio] in range 0.0-1.0
+</ResponseField>
+
+<ResponseField name="mode" type="BindMode" required>
+  Binding mode: `"inside"` | `"orbit"` | `"skip"`. Determines whether the arrow remains outside the shape or goes inside
+</ResponseField>
+
+### Arrowhead
+
+Arrowhead style options.
+
+```typescript
+type Arrowhead =
+  | "arrow"
+  | "bar"
+  | "dot" // legacy
+  | "circle"
+  | "circle_outline"
+  | "triangle"
+  | "triangle_outline"
+  | "diamond"
+  | "diamond_outline"
+  | "crowfoot_one"
+  | "crowfoot_many"
+  | "crowfoot_one_or_many"
+```
+
+### NonDeletedExcalidrawElement
+
+Type helper for elements that are not deleted.
+
+```typescript
+type NonDeletedExcalidrawElement = NonDeleted<ExcalidrawElement>
+```
+
+### OrderedExcalidrawElement
+
+Type helper for elements with a non-null index.
+
+```typescript
+type OrderedExcalidrawElement = Ordered<ExcalidrawElement>
+```
+
+## Type Unions
+
+### ExcalidrawBindableElement
+
+Elements that can have arrows or text bound to them.
+
+```typescript
+type ExcalidrawBindableElement =
+  | ExcalidrawRectangleElement
+  | ExcalidrawDiamondElement
+  | ExcalidrawEllipseElement
+  | ExcalidrawTextElement
+  | ExcalidrawImageElement
+  | ExcalidrawIframeElement
+  | ExcalidrawEmbeddableElement
+  | ExcalidrawFrameElement
+  | ExcalidrawMagicFrameElement
+```
+
+### ExcalidrawTextContainer
+
+Elements that can contain text.
+
+```typescript
+type ExcalidrawTextContainer =
+  | ExcalidrawRectangleElement
+  | ExcalidrawDiamondElement
+  | ExcalidrawEllipseElement
+  | ExcalidrawArrowElement
+```
+
+### ExcalidrawFrameLikeElement
+
+Frame and magic frame elements.
+
+```typescript
+type ExcalidrawFrameLikeElement =
+  | ExcalidrawFrameElement
+  | ExcalidrawMagicFrameElement
+```
+
+### ExcalidrawIframeLikeElement
+
+Iframe and embeddable elements.
+
+```typescript
+type ExcalidrawIframeLikeElement =
+  | ExcalidrawIframeElement
+  | ExcalidrawEmbeddableElement
+```

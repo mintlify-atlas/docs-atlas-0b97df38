@@ -1,0 +1,488 @@
+---
+title: "Sidebar Component"
+description: "Customizable sidebar component for adding panels to the Excalidraw editor"
+---
+
+# Sidebar Component
+
+The `Sidebar` component allows you to add custom side panels to the Excalidraw editor. Sidebars can be docked or floating, contain multiple tabs, and provide a flexible way to extend the editor with custom functionality.
+
+## Basic Usage
+
+<CodeGroup>
+```jsx Simple Sidebar
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar name="custom">
+          <Sidebar.Header>My Custom Sidebar</Sidebar.Header>
+          <div style={{ padding: "1rem" }}>
+            <p>Custom sidebar content goes here</p>
+          </div>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Sidebar with Tabs
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [docked, setDocked] = useState(false);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar 
+          name="custom" 
+          docked={docked}
+          onDock={setDocked}
+        >
+          <Sidebar.Header />
+          <Sidebar.Tabs>
+            <Sidebar.TabTriggers>
+              <Sidebar.TabTrigger tab="tab1">Tab 1</Sidebar.TabTrigger>
+              <Sidebar.TabTrigger tab="tab2">Tab 2</Sidebar.TabTrigger>
+            </Sidebar.TabTriggers>
+            
+            <Sidebar.Tab tab="tab1">
+              <div style={{ padding: "1rem" }}>
+                Content for Tab 1
+              </div>
+            </Sidebar.Tab>
+            
+            <Sidebar.Tab tab="tab2">
+              <div style={{ padding: "1rem" }}>
+                Content for Tab 2
+              </div>
+            </Sidebar.Tab>
+          </Sidebar.Tabs>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Sidebar with Trigger Button
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+import { PanelIcon } from "./icons";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar name="custom">
+          <Sidebar.Trigger 
+            name="custom"
+            tab="default"
+            icon={PanelIcon}
+            title="Open Custom Panel"
+          />
+          <Sidebar.Header>Custom Panel</Sidebar.Header>
+          <div style={{ padding: "1rem" }}>
+            Panel content
+          </div>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Props
+
+<ParamField path="name" type="string" required>
+  Unique identifier for the sidebar. Used to track which sidebar is currently open.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode">
+  Content to display in the sidebar. Typically includes `Sidebar.Header`, `Sidebar.Tabs`, and custom content.
+</ParamField>
+
+<ParamField path="docked" type="boolean">
+  Controls whether the sidebar is docked (pinned) or floating. When docked, the sidebar stays open and the canvas adjusts its width accordingly.
+</ParamField>
+
+<ParamField path="onDock" type="function">
+  Callback fired when the dock button is clicked. Required if you want the sidebar to be user-dockable.
+  
+  ```typescript
+  onDock?: (isDocked: boolean) => void;
+  ```
+</ParamField>
+
+<ParamField path="onStateChange" type="function">
+  Callback fired when the sidebar opens, closes, or changes tabs.
+  
+  ```typescript
+  onStateChange?: (state: { name: string; tab?: string } | null) => void;
+  ```
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class name(s) to apply to the sidebar container.
+</ParamField>
+
+## Subcomponents
+
+### Sidebar.Header
+
+Displays a header bar with close and optional dock buttons.
+
+```jsx
+<Sidebar.Header>
+  Optional Custom Title
+</Sidebar.Header>
+```
+
+**Props:**
+- `children` (React.ReactNode) - Custom header content. If not provided, uses the sidebar name.
+
+**Features:**
+- Automatically includes a close button
+- Shows a dock/undock button when `onDock` prop is provided to the parent Sidebar
+- Adapts styling based on docked state
+
+### Sidebar.Tabs
+
+Container for tab-based navigation within the sidebar.
+
+```jsx
+<Sidebar.Tabs>
+  <Sidebar.TabTriggers>
+    {/* Tab buttons */}
+  </Sidebar.TabTriggers>
+  {/* Tab panels */}
+</Sidebar.Tabs>
+```
+
+### Sidebar.TabTriggers
+
+Container for tab navigation buttons.
+
+```jsx
+<Sidebar.TabTriggers>
+  <Sidebar.TabTrigger tab="tab1">Tab 1</Sidebar.TabTrigger>
+  <Sidebar.TabTrigger tab="tab2">Tab 2</Sidebar.TabTrigger>
+</Sidebar.TabTriggers>
+```
+
+### Sidebar.TabTrigger
+
+Individual tab button.
+
+```jsx
+<Sidebar.TabTrigger tab="settings" icon={<SettingsIcon />}>
+  Settings
+</Sidebar.TabTrigger>
+```
+
+**Props:**
+- `tab` (string, required) - Unique identifier for the tab
+- `children` (React.ReactNode) - Tab label
+- `icon` (JSX.Element) - Optional icon to display
+
+### Sidebar.Tab
+
+Container for tab panel content.
+
+```jsx
+<Sidebar.Tab tab="settings">
+  <div>
+    {/* Tab content */}
+  </div>
+</Sidebar.Tab>
+```
+
+**Props:**
+- `tab` (string, required) - Must match a `TabTrigger`'s tab prop
+- `children` (React.ReactNode) - Tab panel content
+
+### Sidebar.Trigger
+
+Button to open the sidebar, typically placed in the UI toolbar.
+
+```jsx
+<Sidebar.Trigger 
+  name="custom"
+  tab="default"
+  icon={<PanelIcon />}
+  title="Open Panel"
+/>
+```
+
+**Props:**
+- `name` (string, required) - Must match the parent Sidebar's name
+- `tab` (string) - Optional specific tab to open
+- `icon` (JSX.Element) - Icon to display in the trigger button
+- `title` (string) - Tooltip text for the button
+
+## Opening/Closing Sidebars
+
+Sidebars are controlled through the Excalidraw app state:
+
+```jsx
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const openSidebar = () => {
+    excalidrawAPI?.updateScene({
+      appState: {
+        openSidebar: { name: "custom", tab: "tab1" },
+      },
+    });
+  };
+
+  const closeSidebar = () => {
+    excalidrawAPI?.updateScene({
+      appState: {
+        openSidebar: null,
+      },
+    });
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <button onClick={openSidebar}>Open Sidebar</button>
+      <button onClick={closeSidebar}>Close Sidebar</button>
+      
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)}>
+        <Sidebar name="custom">
+          <Sidebar.Header />
+          <div>Sidebar content</div>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+You can also use the imperative API:
+
+```jsx
+excalidrawAPI?.toggleSidebar({ name: "custom", tab: "tab1" });
+```
+
+## Complete Examples
+
+<CodeGroup>
+```jsx Dockable Sidebar with Tabs
+import { useState } from "react";
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+import { 
+  LayersIcon, 
+  PropertiesIcon, 
+  HistoryIcon 
+} from "./icons";
+
+function App() {
+  const [docked, setDocked] = useState(false);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar 
+          name="tools"
+          docked={docked}
+          onDock={setDocked}
+          onStateChange={(state) => {
+            console.log("Sidebar state:", state);
+          }}
+        >
+          <Sidebar.Trigger 
+            name="tools"
+            icon={LayersIcon}
+            title="Open Tools Panel"
+          />
+          
+          <Sidebar.Header />
+          
+          <Sidebar.Tabs>
+            <Sidebar.TabTriggers>
+              <Sidebar.TabTrigger tab="layers" icon={LayersIcon}>
+                Layers
+              </Sidebar.TabTrigger>
+              <Sidebar.TabTrigger tab="properties" icon={PropertiesIcon}>
+                Properties
+              </Sidebar.TabTrigger>
+              <Sidebar.TabTrigger tab="history" icon={HistoryIcon}>
+                History
+              </Sidebar.TabTrigger>
+            </Sidebar.TabTriggers>
+            
+            <Sidebar.Tab tab="layers">
+              <div style={{ padding: "1rem" }}>
+                <h3>Layers Panel</h3>
+                <ul>
+                  <li>Layer 1</li>
+                  <li>Layer 2</li>
+                  <li>Layer 3</li>
+                </ul>
+              </div>
+            </Sidebar.Tab>
+            
+            <Sidebar.Tab tab="properties">
+              <div style={{ padding: "1rem" }}>
+                <h3>Properties Panel</h3>
+                <form>
+                  <label>
+                    Width:
+                    <input type="number" />
+                  </label>
+                  <label>
+                    Height:
+                    <input type="number" />
+                  </label>
+                </form>
+              </div>
+            </Sidebar.Tab>
+            
+            <Sidebar.Tab tab="history">
+              <div style={{ padding: "1rem" }}>
+                <h3>History Panel</h3>
+                <ul>
+                  <li>Action 1</li>
+                  <li>Action 2</li>
+                  <li>Action 3</li>
+                </ul>
+              </div>
+            </Sidebar.Tab>
+          </Sidebar.Tabs>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Multiple Sidebars
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+import { LibraryIcon, TemplatesIcon } from "./icons";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        {/* Library Sidebar */}
+        <Sidebar name="library">
+          <Sidebar.Trigger 
+            name="library"
+            icon={LibraryIcon}
+            title="Open Library"
+          />
+          <Sidebar.Header>Library</Sidebar.Header>
+          <div style={{ padding: "1rem" }}>
+            <p>Your saved components</p>
+          </div>
+        </Sidebar>
+        
+        {/* Templates Sidebar */}
+        <Sidebar name="templates">
+          <Sidebar.Trigger 
+            name="templates"
+            icon={TemplatesIcon}
+            title="Open Templates"
+          />
+          <Sidebar.Header>Templates</Sidebar.Header>
+          <div style={{ padding: "1rem" }}>
+            <p>Choose a template to start</p>
+          </div>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Behavior
+
+### Docking
+
+When a sidebar is docked:
+- It remains open and pinned to the side
+- The canvas adjusts its width to accommodate the sidebar
+- The dock button in the header shows an "undock" icon
+- The sidebar persists even when clicking outside
+
+When a sidebar is floating (not docked):
+- It appears as an overlay on top of the canvas
+- Clicking outside the sidebar closes it
+- Pressing ESC closes it
+- The canvas maintains its full width
+
+### Responsive Design
+
+The sidebar automatically adapts to different screen sizes:
+- On desktop: Can be docked or floating
+- On tablet/mobile: Always floating, cannot be docked
+- The `canFitSidebar` property in `EditorInterface` determines if docking is available
+
+### Multiple Sidebars
+
+Only one sidebar can be open at a time. When a new sidebar is opened:
+- The previous sidebar closes automatically
+- The `onStateChange` callback is fired for both sidebars
+- Sidebar state is tracked in `appState.openSidebar`
+
+## Styling
+
+The Sidebar uses CSS classes that can be targeted for custom styling:
+
+```css
+/* Sidebar container */
+.excalidraw .sidebar {
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Docked state */
+.excalidraw .sidebar--docked {
+  border-left: 1px solid #e5e7eb;
+}
+
+/* Sidebar header */
+.excalidraw .sidebar__header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Tab triggers */
+.excalidraw .sidebar__tab-triggers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Individual tab trigger */
+.excalidraw .sidebar__tab-trigger {
+  padding: 0.5rem 1rem;
+}
+
+.excalidraw .sidebar__tab-trigger[data-active="true"] {
+  background: #f3f4f6;
+  border-bottom: 2px solid #6965db;
+}
+```
+
+## Best Practices
+
+1. **Use meaningful names** - Choose descriptive sidebar names that reflect their purpose
+2. **Provide dock functionality** - Allow users to dock sidebars for persistent access to tools
+3. **Organize with tabs** - Use tabs when you have multiple related panels
+4. **Add trigger buttons** - Make sidebars discoverable with visible trigger buttons
+5. **Handle state properly** - Use `onStateChange` to sync sidebar state with your app
+6. **Consider mobile** - Test your sidebar on different screen sizes
+
+## See Also
+
+- [Excalidraw](/components/excalidraw) - Main component documentation
+- [MainMenu](/components/main-menu) - Main menu customization
+- [Button](/components/buttons) - Button components for sidebar UI

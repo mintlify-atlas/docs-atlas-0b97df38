@@ -1,0 +1,371 @@
+---
+title: InitialData
+description: Structure reference for Excalidraw initial data state
+---
+
+# InitialData
+
+The `initialData` prop allows you to populate the Excalidraw canvas with elements, app state, and files when the component mounts.
+
+## Type Definition
+
+```typescript
+type ExcalidrawInitialDataState = {
+  elements?: readonly ExcalidrawElement[] | null;
+  appState?: Partial<AppState> | null;
+  scrollToContent?: boolean;
+  libraryItems?: LibraryItems | Promise<LibraryItems>;
+  files?: BinaryFiles;
+};
+
+type InitialDataProp = 
+  | ExcalidrawInitialDataState
+  | (() => Promise<ExcalidrawInitialDataState | null>)
+  | Promise<ExcalidrawInitialDataState | null>
+  | null;
+```
+
+The `initialData` prop accepts:
+- A static object with initial data
+- A Promise that resolves to initial data
+- A function returning a Promise (useful for lazy loading)
+- `null` (starts with empty canvas)
+
+## Properties
+
+<ParamField path="elements" type="readonly ExcalidrawElement[] | null">
+  Array of elements to render on the canvas.
+  
+  Each element must be a valid Excalidraw element with all required properties. Elements will be automatically restored and validated during initialization.
+  
+  <Expandable title="Example">
+    ```typescript
+    elements: [
+      {
+        type: "rectangle",
+        id: "rect-1",
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+        angle: 0,
+        strokeColor: "#000000",
+        backgroundColor: "transparent",
+        fillStyle: "hachure",
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        roughness: 1,
+        opacity: 100,
+        groupIds: [],
+        frameId: null,
+        roundness: { type: 3 },
+        seed: 1234567,
+        version: 1,
+        versionNonce: 0,
+        isDeleted: false,
+        boundElements: null,
+        updated: 1,
+        link: null,
+        locked: false,
+      },
+    ]
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState> | null">
+  Partial app state to initialize the editor with.
+  
+  You only need to provide the properties you want to override from the default state. Common properties include:
+  
+  <Expandable title="Common AppState Properties">
+    - `viewBackgroundColor`: Canvas background color
+    - `currentItemStrokeColor`: Default stroke color for new elements
+    - `currentItemBackgroundColor`: Default background color for new elements
+    - `currentItemFillStyle`: Default fill style ("hachure", "cross-hatch", "solid")
+    - `currentItemStrokeWidth`: Default stroke width
+    - `currentItemStrokeStyle`: Default stroke style ("solid", "dashed", "dotted")
+    - `currentItemRoughness`: Default roughness (0-2)
+    - `currentItemOpacity`: Default opacity (0-100)
+    - `gridModeEnabled`: Whether grid is enabled
+    - `zenModeEnabled`: Whether zen mode is enabled
+    - `theme`: Theme ("light" or "dark")
+    - `name`: Drawing name
+  </Expandable>
+  
+  <Expandable title="Example">
+    ```typescript
+    appState: {
+      viewBackgroundColor: "#fffef7",
+      currentItemStrokeColor: "#1971c2",
+      currentItemBackgroundColor: "#a5d8ff",
+      currentItemFillStyle: "solid",
+      currentItemStrokeWidth: 2,
+      currentItemRoughness: 0,
+      currentItemOpacity: 100,
+      gridModeEnabled: true,
+      theme: "light",
+      name: "My Diagram",
+    }
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField path="scrollToContent" type="boolean" default="false">
+  When `true`, automatically scrolls and zooms the canvas to fit all elements in view after initialization.
+  
+  Useful when loading scenes with elements that may be positioned far from the origin.
+</ParamField>
+
+<ParamField path="libraryItems" type="LibraryItems | Promise<LibraryItems>">
+  Library items to preload into the element library.
+  
+  Can be a static array or a Promise that resolves to library items. This allows you to provide default templates or frequently used element groups.
+  
+  <Expandable title="Library Item Structure">
+    ```typescript
+    type LibraryItem = {
+      id: string;
+      status: "published" | "unpublished";
+      elements: readonly ExcalidrawElement[];
+      created: number; // timestamp in epoch (ms)
+      name?: string;
+      error?: string;
+    };
+    
+    type LibraryItems = readonly LibraryItem[];
+    ```
+  </Expandable>
+  
+  <Expandable title="Example">
+    ```typescript
+    libraryItems: [
+      {
+        id: "template-1",
+        status: "published",
+        created: Date.now(),
+        name: "Flowchart Shapes",
+        elements: [
+          // Array of ExcalidrawElements
+        ],
+      },
+    ]
+    ```
+  </Expandable>
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles">
+  Binary file data for images and other file-based elements.
+  
+  Maps file IDs to their binary data. Required if your elements include images.
+  
+  <Expandable title="BinaryFiles Structure">
+    ```typescript
+    type BinaryFiles = Record<FileId, BinaryFileData>;
+    
+    type BinaryFileData = {
+      mimeType: string; // e.g., "image/png", "image/jpeg"
+      id: FileId;
+      dataURL: DataURL; // Base64-encoded data URL
+      created: number; // Epoch timestamp in milliseconds
+      lastRetrieved?: number; // Epoch timestamp in milliseconds
+    };
+    ```
+  </Expandable>
+  
+  <Expandable title="Example">
+    ```typescript
+    files: {
+      "file-id-1": {
+        mimeType: "image/png",
+        id: "file-id-1",
+        dataURL: "data:image/png;base64,iVBORw0KGgoAAAANS...",
+        created: 1640000000000,
+      },
+    }
+    ```
+  </Expandable>
+</ParamField>
+
+## Usage Examples
+
+### Static Initial Data
+
+Provide initial data as a static object:
+
+```typescript
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      initialData={{
+        elements: [
+          {
+            type: "rectangle",
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            // ... other required properties
+          },
+        ],
+        appState: {
+          viewBackgroundColor: "#ffffff",
+          gridModeEnabled: true,
+        },
+        scrollToContent: true,
+      }}
+    />
+  );
+}
+```
+
+### Async Loading
+
+Load initial data asynchronously from an API:
+
+```typescript
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const loadInitialData = async () => {
+    const response = await fetch("/api/diagram/123");
+    const data = await response.json();
+    
+    return {
+      elements: data.elements,
+      appState: data.appState,
+      files: data.files,
+      scrollToContent: true,
+    };
+  };
+  
+  return <Excalidraw initialData={loadInitialData} />;
+}
+```
+
+### Lazy Loading with Promise
+
+Use a Promise directly for lazy initialization:
+
+```typescript
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+const initialDataPromise = fetch("/api/diagram")
+  .then(res => res.json())
+  .then(data => ({
+    elements: data.elements,
+    appState: data.appState,
+    scrollToContent: true,
+  }));
+
+function App() {
+  return <Excalidraw initialData={initialDataPromise} />;
+}
+```
+
+### Loading from Local Storage
+
+Restore previous session from local storage:
+
+```typescript
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const loadFromStorage = () => {
+    const saved = localStorage.getItem("excalidraw-state");
+    if (!saved) return null;
+    
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        elements: parsed.elements || [],
+        appState: parsed.appState || {},
+        files: parsed.files || {},
+      };
+    } catch (error) {
+      console.error("Failed to parse saved state", error);
+      return null;
+    }
+  };
+  
+  return <Excalidraw initialData={loadFromStorage()} />;
+}
+```
+
+### With Library Items
+
+Preload library with templates:
+
+```typescript
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+const libraryItems = [
+  {
+    id: "template-flowchart",
+    status: "published" as const,
+    created: Date.now(),
+    name: "Flowchart Symbols",
+    elements: [
+      // Flowchart element templates
+    ],
+  },
+  {
+    id: "template-uml",
+    status: "published" as const,
+    created: Date.now(),
+    name: "UML Diagrams",
+    elements: [
+      // UML element templates
+    ],
+  },
+];
+
+function App() {
+  return (
+    <Excalidraw
+      initialData={{
+        libraryItems,
+        scrollToContent: false,
+      }}
+    />
+  );
+}
+```
+
+## Important Notes
+
+<Note>
+  **Element Restoration**: Elements provided in `initialData` are automatically restored and validated. Missing or invalid properties are filled with defaults.
+</Note>
+
+<Warning>
+  **Required Properties**: While the restoration process fills in missing properties, it's recommended to provide complete element definitions to avoid unexpected behavior.
+</Warning>
+
+<Note>
+  **Async Loading**: When using async loading (Promise or function), Excalidraw shows a loading state until the data resolves.
+</Note>
+
+<Warning>
+  **Memory Considerations**: Loading large scenes with many elements or large binary files can impact performance. Consider lazy loading or pagination for very large datasets.
+</Warning>
+
+## Type Imports
+
+```typescript
+import type {
+  ExcalidrawInitialDataState,
+  ExcalidrawElement,
+  AppState,
+  BinaryFiles,
+  LibraryItems,
+  LibraryItem,
+} from "@excalidraw/excalidraw";
+```
+
+## Related
+
+- [ExcalidrawProps](/api/props) - Complete props reference
+- [ImportedDataState](/api/types#importeddatastate) - Data structure for importing scenes

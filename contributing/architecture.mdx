@@ -1,0 +1,361 @@
+---
+title: Project Architecture
+description: Understanding Excalidraw's monorepo structure and architecture
+---
+
+# Project Architecture
+
+Excalidraw is built as a **monorepo** using Yarn workspaces, with a clear separation between the core library and the application.
+
+## Monorepo Structure
+
+### Core Packages
+
+#### `packages/excalidraw/`
+
+The main React component library published to npm as `@excalidraw/excalidraw`.
+
+- **Purpose**: Embeddable Excalidraw editor component
+- **Published**: Yes (npm package)
+- **Entry Point**: `packages/excalidraw/index.tsx`
+- **Build Output**: `packages/excalidraw/dist/`
+
+**Key Features**:
+- Infinite canvas-based whiteboard
+- Hand-drawn style rendering
+- Shape libraries and tools
+- Export to PNG, SVG, and `.excalidraw` JSON
+- Customizable UI and theming
+- i18n support
+
+#### `packages/common/`
+
+Shared utilities and types used across the monorepo.
+
+- **Package Name**: `@excalidraw/common`
+- **Published**: Internal package
+- **Contains**: Common utilities, type definitions, color helpers
+
+#### `packages/element/`
+
+Element-related functionality and types.
+
+- **Package Name**: `@excalidraw/element`
+- **Published**: Internal package
+- **Contains**: Element types, transformations, rendering logic
+
+#### `packages/math/`
+
+Mathematical utilities for geometry and calculations.
+
+- **Package Name**: `@excalidraw/math`
+- **Published**: Internal package
+- **Contains**: Geometry helpers, vector math, collision detection
+
+#### `packages/utils/`
+
+General utility functions.
+
+- **Package Name**: `@excalidraw/utils`
+- **Published**: Internal package
+- **Contains**: Helper functions, formatters, validators
+
+### Application
+
+#### `excalidraw-app/`
+
+The full-featured web application hosted at [excalidraw.com](https://excalidraw.com).
+
+- **Purpose**: Production web app showcasing Excalidraw capabilities
+- **Published**: Deployed to Vercel
+- **Uses**: `@excalidraw/excalidraw` package
+
+**Additional Features**:
+- 📡 PWA support (works offline)
+- 🤼 Real-time collaboration
+- 🔒 End-to-end encryption
+- 💾 Local-first storage (autosaves to browser)
+- 🔗 Shareable readonly links
+
+**Key Files**:
+- `excalidraw-app/App.tsx` - Main application component
+- `excalidraw-app/collab/` - Collaboration features
+- `excalidraw-app/data/` - Data persistence logic
+- `excalidraw-app/components/` - App-specific UI components
+
+### Examples
+
+#### `examples/`
+
+Integration examples demonstrating how to use Excalidraw:
+
+- `examples/with-nextjs/` - Next.js integration
+- `examples/with-script-in-browser/` - Plain HTML/JS integration
+
+## Package System
+
+### Yarn Workspaces
+
+Excalidraw uses Yarn workspaces for monorepo management:
+
+```json
+"workspaces": [
+  "excalidraw-app",
+  "packages/*",
+  "examples/*"
+]
+```
+
+This allows:
+- Shared dependencies across packages
+- Linking local packages without publishing
+- Single `node_modules` at the root
+
+### Path Aliases
+
+The monorepo uses TypeScript path aliases for clean imports:
+
+```json
+"paths": {
+  "@excalidraw/common": ["./packages/common/src/index.ts"],
+  "@excalidraw/common/*": ["./packages/common/src/*"],
+  "@excalidraw/excalidraw": ["./packages/excalidraw/index.tsx"],
+  "@excalidraw/excalidraw/*": ["./packages/excalidraw/*"],
+  "@excalidraw/element": ["./packages/element/src/index.ts"],
+  "@excalidraw/element/*": ["./packages/element/src/*"],
+  "@excalidraw/math": ["./packages/math/src/index.ts"],
+  "@excalidraw/math/*": ["./packages/math/src/*"],
+  "@excalidraw/utils": ["./packages/utils/src/index.ts"],
+  "@excalidraw/utils/*": ["./packages/utils/src/*"]
+}
+```
+
+These aliases are configured in:
+- `tsconfig.json` - For TypeScript
+- `vitest.config.mts` - For test resolution
+
+## Build System
+
+### For Packages
+
+**Build Tool**: esbuild
+
+- **Fast**: Extremely fast bundling
+- **Output**: ESM modules in `dist/` directory
+- **Types**: Generated with TypeScript compiler
+
+```bash
+# Build all packages
+yarn build:packages
+
+# Individual package builds
+yarn build:common
+yarn build:element
+yarn build:math
+yarn build:excalidraw
+```
+
+### For Application
+
+**Build Tool**: Vite
+
+- **Dev Server**: Fast HMR with Vite dev server
+- **Production**: Optimized build with code splitting
+- **Plugins**: React, PWA, SVG loader, EJS
+
+```bash
+# Start dev server
+yarn start
+
+# Build for production
+yarn build:app
+```
+
+## Development Workflow
+
+### Working on Core Library Features
+
+1. Make changes in `packages/excalidraw/`
+2. Changes hot-reload automatically when running `yarn start`
+3. Test changes in the dev server at localhost:3000
+4. Write tests in the same package
+5. Run `yarn test:update` before committing
+
+### Working on App-Specific Features
+
+1. Make changes in `excalidraw-app/`
+2. Features like collaboration, sharing, PWA
+3. Test in dev environment
+4. These features don't affect the npm package
+
+### Working on Internal Packages
+
+1. Make changes in `packages/common/`, `packages/element/`, etc.
+2. Run `yarn build:packages` to rebuild
+3. Changes affect both the library and app
+4. Always run type checks: `yarn test:typecheck`
+
+## TypeScript Configuration
+
+### Strict Mode Enabled
+
+```json
+{
+  "strict": true,
+  "forceConsistentCasingInFileNames": true,
+  "noFallthroughCasesInSwitch": true
+}
+```
+
+### Target Environment
+
+- **Target**: ESNext
+- **Module**: ESNext
+- **JSX**: react-jsx (React 17+ automatic runtime)
+- **Lib**: DOM, ESNext
+
+### Base Configuration
+
+- Root `tsconfig.json` - Base configuration for the monorepo
+- `packages/tsconfig.base.json` - Shared config for packages
+- Individual `tsconfig.json` in each package
+
+## Testing Architecture
+
+### Test Framework
+
+**Vitest** - Fast unit test framework compatible with Jest
+
+### Configuration
+
+Defined in `vitest.config.mts`:
+
+```typescript
+{
+  test: {
+    setupFiles: ["./setupTests.ts"],
+    globals: true,
+    environment: "jsdom",
+    coverage: {
+      thresholds: {
+        lines: 60,
+        branches: 70,
+        functions: 63,
+        statements: 60
+      }
+    }
+  }
+}
+```
+
+### Test Location
+
+- `packages/excalidraw/**/*.test.tsx` - Component tests
+- `packages/common/tests/` - Common utilities tests
+- `excalidraw-app/tests/` - App-specific tests
+
+### Test Utilities
+
+- `@testing-library/react` - Component testing
+- `@testing-library/jest-dom` - DOM matchers
+- `vitest-canvas-mock` - Canvas API mocking
+- `fake-indexeddb` - IndexedDB mocking
+
+## Code Quality Tools
+
+### ESLint
+
+Configuration in `.eslintrc.json`:
+
+- Based on `@excalidraw/eslint-config`
+- Extends `react-app` rules
+- Custom rules for the project
+
+### Prettier
+
+Configuration: `@excalidraw/prettier-config`
+
+- Consistent code formatting
+- Runs on pre-commit hook via lint-staged
+
+### Husky + lint-staged
+
+**Pre-commit Hook** (`.husky/pre-commit`):
+
+```javascript
+// .lintstagedrc.js
+{
+  "*.{js,ts,tsx}": [
+    "eslint --max-warnings=0 --fix"
+  ],
+  "*.{css,scss,json,md,html,yml}": [
+    "prettier --write"
+  ]
+}
+```
+
+## State Management
+
+### Jotai
+
+Excalidraw uses [Jotai](https://jotai.org/) for state management:
+
+- **Atomic state management**: Fine-grained reactivity
+- **Type-safe**: Full TypeScript support
+- **Performant**: Only re-renders affected components
+
+### Key State Atoms
+
+Defined in:
+- `packages/excalidraw/` - Editor state atoms
+- `excalidraw-app/app-jotai.ts` - App-specific atoms
+
+## Styling
+
+### SASS/SCSS
+
+Excalidraw uses SASS for styling:
+
+- Component-scoped styles
+- CSS variables for theming
+- Dark mode support
+
+### CSS Architecture
+
+- `packages/excalidraw/index.scss` - Main library styles
+- `excalidraw-app/index.scss` - App-specific styles
+- Component co-located `.scss` files
+
+## Browser Support
+
+### Production Targets
+
+```json
+[
+  ">0.2%",
+  "not dead",
+  "not ie <= 11",
+  "not safari < 12",
+  "not edge < 79",
+  "not chrome < 70"
+]
+```
+
+### Development Targets
+
+Latest versions of Chrome, Firefox, and Safari.
+
+## Next Steps
+
+Now that you understand the architecture:
+
+1. Review the [Contribution Guidelines](/contributing/guidelines) for code standards
+2. Check the [Testing Guide](/contributing/testing) to write effective tests
+3. Start with an [Easy task](https://github.com/orgs/excalidraw/projects/3) from the roadmap
+
+## Resources
+
+- [Vite Documentation](https://vitejs.dev/)
+- [Vitest Documentation](https://vitest.dev/)
+- [Jotai Documentation](https://jotai.org/)
+- [TypeScript Documentation](https://www.typescriptlang.org/)

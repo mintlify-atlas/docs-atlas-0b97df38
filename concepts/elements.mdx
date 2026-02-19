@@ -1,0 +1,510 @@
+---
+title: "Elements"
+description: "Understanding Excalidraw elements, their types, properties, and lifecycle management"
+---
+
+## Overview
+
+Elements are the fundamental building blocks of any Excalidraw drawing. Every shape, line, text, image, and frame in Excalidraw is represented as an element object with a consistent base structure and type-specific properties.
+
+## Element Types
+
+Excalidraw supports multiple element types, each representing a different drawing primitive:
+
+<Tabs>
+  <Tab title="Shape Elements">
+    Basic geometric shapes that form the foundation of drawings:
+
+    - **rectangle** - Rectangular shapes with configurable roundness
+    - **diamond** - Diamond/rhombus shapes
+    - **ellipse** - Circular and elliptical shapes
+
+    ```typescript
+    type ExcalidrawRectangleElement = _ExcalidrawElementBase & {
+      type: "rectangle";
+    };
+
+    type ExcalidrawDiamondElement = _ExcalidrawElementBase & {
+      type: "diamond";
+    };
+
+    type ExcalidrawEllipseElement = _ExcalidrawElementBase & {
+      type: "ellipse";
+    };
+    ```
+  </Tab>
+
+  <Tab title="Linear Elements">
+    Line-based elements that connect points:
+
+    - **line** - Polyline with multiple points
+    - **arrow** - Line with arrowheads and binding capabilities
+
+    ```typescript
+    type ExcalidrawLinearElement = _ExcalidrawElementBase & {
+      type: "line" | "arrow";
+      points: readonly LocalPoint[];
+      startBinding: FixedPointBinding | null;
+      endBinding: FixedPointBinding | null;
+      startArrowhead: Arrowhead | null;
+      endArrowhead: Arrowhead | null;
+    };
+    ```
+
+    <Note>
+      Linear elements store their geometry as an array of `LocalPoint` coordinates relative to the element's `(x, y)` position.
+    </Note>
+  </Tab>
+
+  <Tab title="Container Elements">
+    Elements that can contain other elements or content:
+
+    - **frame** - Container for grouping elements with clipping
+    - **magicframe** - AI-enhanced frame with generation capabilities
+    - **text** - Text with optional container binding
+
+    ```typescript
+    type ExcalidrawFrameElement = _ExcalidrawElementBase & {
+      type: "frame";
+      name: string | null;
+    };
+
+    type ExcalidrawTextElement = _ExcalidrawElementBase & {
+      type: "text";
+      fontSize: number;
+      fontFamily: FontFamilyValues;
+      text: string;
+      textAlign: TextAlign;
+      verticalAlign: VerticalAlign;
+      containerId: ExcalidrawGenericElement["id"] | null;
+      originalText: string;
+      autoResize: boolean;
+      lineHeight: number & { _brand: "unitlessLineHeight" };
+    };
+    ```
+  </Tab>
+
+  <Tab title="Media Elements">
+    Elements for embedding external content:
+
+    - **image** - Raster images with cropping and scaling
+    - **freedraw** - Hand-drawn strokes with pressure sensitivity
+    - **embeddable** - Embedded web content
+    - **iframe** - Iframe-based embeds
+
+    ```typescript
+    type ExcalidrawImageElement = _ExcalidrawElementBase & {
+      type: "image";
+      fileId: FileId | null;
+      status: "pending" | "saved" | "error";
+      scale: [number, number];
+      crop: ImageCrop | null;
+    };
+
+    type ExcalidrawFreeDrawElement = _ExcalidrawElementBase & {
+      type: "freedraw";
+      points: readonly LocalPoint[];
+      pressures: readonly number[];
+      simulatePressure: boolean;
+    };
+    ```
+  </Tab>
+</Tabs>
+
+## Base Element Structure
+
+All element types extend a common base structure defined in `_ExcalidrawElementBase`:
+
+```typescript packages/element/src/types.ts
+type _ExcalidrawElementBase = Readonly<{
+  // Identity
+  id: string;
+  type: ExcalidrawElementType;
+  
+  // Position and dimensions
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  angle: Radians;
+  
+  // Styling
+  strokeColor: string;
+  backgroundColor: string;
+  fillStyle: FillStyle;
+  strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  roundness: null | { type: RoundnessType; value?: number };
+  roughness: number;
+  opacity: number;
+  
+  // Versioning and collaboration
+  version: number;
+  versionNonce: number;
+  updated: number;  // epoch timestamp
+  seed: number;
+  index: FractionalIndex | null;
+  
+  // State
+  isDeleted: boolean;
+  locked: boolean;
+  
+  // Relationships
+  groupIds: readonly GroupId[];
+  frameId: string | null;
+  boundElements: readonly BoundElement[] | null;
+  
+  // Metadata
+  link: string | null;
+  customData?: Record<string, any>;
+}>;
+```
+
+<Accordion title="Key Property Explanations">
+  - **id**: Unique identifier for the element, generated using `randomId()`
+  - **seed**: Random integer used to seed shape generation in rough.js, ensuring consistent rendering across sessions
+  - **version**: Integer that increments on each change, used for collaboration reconciliation
+  - **versionNonce**: Random integer regenerated on each change, used for deterministic reconciliation when versions are identical
+  - **index**: Fractional index string (using [fractional indexing](https://github.com/rocicorp/fractional-indexing)) for ordering in multiplayer scenarios
+  - **updated**: Epoch timestamp (ms) of last element update
+  - **boundElements**: Array of elements bound to this element (e.g., arrows, text labels)
+  - **roundness**: Configures corner rounding - `null` for no rounding, or an object with `type` ("adaptive" or "proportional") and optional `value`
+</Accordion>
+
+## Creating Elements
+
+Excalidraw provides factory functions for creating new elements with proper initialization:
+
+```typescript
+import { newElement, newTextElement, newLinearElement } from "@excalidraw/element";
+
+// Create a rectangle
+const rectangle = newElement({
+  type: "rectangle",
+  x: 100,
+  y: 100,
+  width: 200,
+  height: 150,
+  strokeColor: "#000000",
+  backgroundColor: "#ffffff",
+  fillStyle: "hachure",
+  strokeWidth: 2,
+  roughness: 1,
+  opacity: 100,
+});
+
+// Create a text element
+const text = newTextElement({
+  x: 150,
+  y: 150,
+  text: "Hello Excalidraw",
+  fontSize: 20,
+  fontFamily: 1,
+  textAlign: "center",
+});
+
+// Create an arrow
+const arrow = newLinearElement({
+  type: "arrow",
+  x: 50,
+  y: 50,
+  startArrowhead: null,
+  endArrowhead: "arrow",
+});
+```
+
+<Note>
+  Element factory functions automatically initialize required properties like `id`, `version`, `versionNonce`, `seed`, and `updated`.
+</Note>
+
+## Mutating Elements
+
+Excalidraw provides two approaches for updating elements:
+
+### 1. Immutable Updates with `newElementWith`
+
+Creates a new element object with updates applied:
+
+```typescript packages/element/src/mutateElement.ts
+import { newElementWith } from "@excalidraw/element";
+
+const updatedElement = newElementWith(element, {
+  x: 200,
+  y: 300,
+  strokeColor: "#ff0000",
+});
+// Returns a new element with version and versionNonce incremented
+```
+
+### 2. Mutable Updates with `mutateElement`
+
+Mutates an element in place for performance:
+
+```typescript packages/element/src/mutateElement.ts
+import { mutateElement } from "@excalidraw/element";
+
+const elementsMap = scene.getElementsMapIncludingDeleted();
+
+mutateElement(element, elementsMap, {
+  width: 300,
+  height: 200,
+});
+// Mutates element in place, updates version, versionNonce, and updated timestamp
+```
+
+<Warning>
+  `mutateElement` does not trigger component re-renders. Use `scene.mutateElement()` or `excalidrawAPI.mutateElement()` when you need to trigger updates.
+</Warning>
+
+### Version Bumping
+
+Manually bump an element's version without other changes:
+
+```typescript
+import { bumpVersion } from "@excalidraw/element";
+
+bumpVersion(element);
+// Increments version, regenerates versionNonce, updates timestamp
+```
+
+## Element Properties
+
+### Styling Properties
+
+<Tabs>
+  <Tab title="Colors">
+    ```typescript
+    element.strokeColor = "#000000";      // Hex color for borders
+    element.backgroundColor = "#ffffff";  // Hex color for fills
+    element.opacity = 100;                // 0-100 percentage
+    ```
+  </Tab>
+
+  <Tab title="Stroke">
+    ```typescript
+    element.strokeWidth = 2;              // 1, 2, 4 (thin, bold, extra bold)
+    element.strokeStyle = "solid";        // "solid" | "dashed" | "dotted"
+    element.roughness = 1;                // 0 (smooth) to 2 (very rough)
+    ```
+  </Tab>
+
+  <Tab title="Fill">
+    ```typescript
+    element.fillStyle = "hachure";        // "hachure" | "cross-hatch" | "solid" | "zigzag"
+    element.roundness = {                 // Corner rounding
+      type: "adaptive",                   // "adaptive" | "proportional"
+      value: 2                            // Optional radius value
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### Geometric Properties
+
+```typescript
+// Position (top-left corner)
+element.x = 100;
+element.y = 200;
+
+// Dimensions
+element.width = 300;
+element.height = 150;
+
+// Rotation in radians (0 to 2π)
+element.angle = 0.785398; // 45 degrees
+```
+
+### Relationship Properties
+
+```typescript
+// Grouping
+element.groupIds = ["groupId1", "groupId2"]; // Ordered from deepest to shallowest
+
+// Frame membership
+element.frameId = "frameElementId" | null;
+
+// Binding (arrows and text)
+element.boundElements = [
+  { id: "arrowId", type: "arrow" },
+  { id: "textId", type: "text" }
+];
+```
+
+## Element State Management
+
+### Deletion
+
+Elements are soft-deleted by setting the `isDeleted` flag:
+
+```typescript
+element.isDeleted = true;
+```
+
+<Tip>
+  Use helper functions to filter deleted elements:
+
+  ```typescript
+  import { isNonDeletedElement, getNonDeletedElements } from "@excalidraw/element";
+
+  // Filter single element
+  if (isNonDeletedElement(element)) {
+    // element is guaranteed to have isDeleted: false
+  }
+
+  // Filter array
+  const activeElements = getNonDeletedElements(allElements);
+  ```
+</Tip>
+
+### Locking
+
+Locked elements cannot be modified by user interactions:
+
+```typescript
+element.locked = true;
+```
+
+### Ordering with Fractional Indices
+
+Elements use fractional indices for consistent ordering in collaborative scenarios:
+
+```typescript packages/element/src/types.ts
+type FractionalIndex = string & { _brand: "fractionalIndex" };
+
+element.index = "a0"; // Fractional index for ordering
+```
+
+<Note>
+  Fractional indices are automatically synced with array order by `syncMovedIndices()` and `syncInvalidIndices()` functions. You typically don't need to manipulate them directly.
+</Note>
+
+## Element Bindings
+
+Excalidraw supports two types of element bindings:
+
+### Arrow Bindings
+
+Arrows can bind to bindable elements (rectangles, diamonds, ellipses, text, images, frames):
+
+```typescript packages/element/src/types.ts
+type FixedPointBinding = {
+  elementId: ExcalidrawBindableElement["id"];
+  // Normalized position (0.0-1.0) on the bound element
+  fixedPoint: [number, number];
+  // Binding mode: "inside" | "orbit" | "skip"
+  mode: BindMode;
+};
+
+arrow.startBinding = {
+  elementId: "rect123",
+  fixedPoint: [0.5, 0],  // Top center
+  mode: "orbit"
+};
+
+arrow.endBinding = {
+  elementId: "rect456",
+  fixedPoint: [0.5, 1],  // Bottom center
+  mode: "orbit"
+};
+```
+
+### Text Container Bindings
+
+Text elements can bind to containers:
+
+```typescript
+textElement.containerId = "rectId";
+rectElement.boundElements = [{ id: "textId", type: "text" }];
+```
+
+## Type Guards
+
+Excalidraw provides comprehensive type guards for element types:
+
+```typescript
+import {
+  isTextElement,
+  isLinearElement,
+  isArrowElement,
+  isFreeDrawElement,
+  isImageElement,
+  isFrameLikeElement,
+} from "@excalidraw/element";
+
+if (isTextElement(element)) {
+  // TypeScript knows element is ExcalidrawTextElement
+  console.log(element.text, element.fontSize);
+}
+
+if (isArrowElement(element)) {
+  // Access arrow-specific properties
+  console.log(element.startBinding, element.endBinding);
+}
+```
+
+## Element Maps
+
+For performance, Excalidraw uses Map structures to store elements:
+
+```typescript packages/element/src/types.ts
+// Map of all scene elements (including deleted)
+type SceneElementsMap = Map<
+  ExcalidrawElement["id"],
+  Ordered<ExcalidrawElement>
+> & MakeBrand<"SceneElementsMap">;
+
+// Map of non-deleted elements only
+type NonDeletedSceneElementsMap = Map<
+  ExcalidrawElement["id"],
+  Ordered<NonDeletedExcalidrawElement>
+> & MakeBrand<"NonDeletedSceneElementsMap">;
+```
+
+<Tip>
+  Element maps use branded types to ensure type safety and prevent mixing different map types.
+</Tip>
+
+## Custom Data
+
+Elements support custom data storage for extensions:
+
+```typescript
+element.customData = {
+  pluginName: "my-plugin",
+  userData: { foo: "bar" },
+  metadata: [1, 2, 3]
+};
+```
+
+<Warning>
+  Keep custom data lightweight as it's serialized and shared in collaboration sessions.
+</Warning>
+
+## Best Practices
+
+<Accordion title="Performance Optimization">
+  - Use `mutateElement` for batch updates instead of creating new elements
+  - Access elements through Scene maps rather than iterating arrays
+  - Filter non-deleted elements once and reuse the filtered collection
+  - Use type guards early to avoid runtime checks
+</Accordion>
+
+<Accordion title="Collaboration Safety">
+  - Never mutate `version` or `versionNonce` manually
+  - Always use `mutateElement` or `newElementWith` to ensure proper versioning
+  - Respect element `locked` state in custom interactions
+  - Use fractional indices for ordering, don't rely on array position
+</Accordion>
+
+<Accordion title="Type Safety">
+  - Use specific element types rather than `ExcalidrawElement` when possible
+  - Leverage type guards to narrow element types
+  - Use branded types (`FileId`, `FractionalIndex`) for type safety
+  - Prefer `NonDeleted<T>` types when working with active elements
+</Accordion>
+
+## Related Concepts
+
+- [Scene](/concepts/scene) - Managing collections of elements
+- [App State](/concepts/app-state) - Global application state management
+- [Collaboration](/concepts/collaboration) - Multi-user element synchronization

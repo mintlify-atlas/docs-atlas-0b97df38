@@ -1,0 +1,304 @@
+---
+title: Development Environment Setup
+description: Get your local development environment set up for contributing to Excalidraw
+---
+
+# Development Environment Setup
+
+This guide will help you set up Excalidraw for local development and testing.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **[Node.js](https://nodejs.org/)** - Version 18.0.0 or higher
+- **[Yarn](https://yarnpkg.com/)** - v1.22.22 (specified in package manager)
+- **[Git](https://git-scm.com/)** - For version control
+
+## Installation Options
+
+### Option 1: Local Setup (Recommended)
+
+<Steps>
+
+<Step title="Fork and Clone the Repository">
+
+1. Fork the [Excalidraw repository](https://github.com/excalidraw/excalidraw) on GitHub
+2. Clone your fork locally:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/excalidraw.git
+cd excalidraw
+```
+
+3. Set up the upstream remote to keep your fork in sync:
+
+```bash
+git remote add upstream https://github.com/excalidraw/excalidraw.git
+git fetch upstream
+git branch --set-upstream-to=upstream/master master
+```
+
+</Step>
+
+<Step title="Install Dependencies">
+
+Install all project dependencies using Yarn:
+
+```bash
+yarn
+```
+
+This will install dependencies for all packages in the monorepo using Yarn workspaces.
+
+</Step>
+
+<Step title="Start the Development Server">
+
+Start the development server:
+
+```bash
+yarn start
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000).
+
+</Step>
+
+<Step title="Create a Feature Branch">
+
+Create a new branch for your changes:
+
+```bash
+git checkout -b your-branch-name
+```
+
+</Step>
+
+</Steps>
+
+### Option 2: CodeSandbox
+
+For quick contributions without local setup:
+
+<Steps>
+
+<Step title="Open in CodeSandbox">
+
+Go to [https://codesandbox.io/p/github/excalidraw/excalidraw](https://codesandbox.io/p/github/excalidraw/excalidraw)
+
+</Step>
+
+<Step title="Connect GitHub Account">
+
+Sign in with your GitHub account and reload the page if needed.
+
+</Step>
+
+<Step title="Fork the Sandbox">
+
+1. Navigate to the Git tab on the left side
+2. Click "Fork Sandbox"
+3. Start coding immediately
+4. Commit and create PRs directly from CodeSandbox
+
+</Step>
+
+</Steps>
+
+### Option 3: Docker Compose
+
+For containerized development without Node.js setup:
+
+```bash
+docker-compose up --build -d
+```
+
+## Available Scripts
+
+### Development
+
+```bash
+# Start development server
+yarn start
+
+# Start production build locally
+yarn start:production
+
+# Build the application
+yarn build
+
+# Build preview version
+yarn build:preview
+```
+
+### Package Development
+
+```bash
+# Build all packages
+yarn build:packages
+
+# Build individual packages
+yarn build:common
+yarn build:element
+yarn build:math
+yarn build:excalidraw
+
+# Build the app
+yarn build:app
+```
+
+### Testing
+
+```bash
+# Run all tests in watch mode
+yarn test
+
+# Run all tests once
+yarn test:app --watch=false
+
+# Update test snapshots
+yarn test:update
+
+# Run test coverage
+yarn test:coverage
+
+# Run tests with UI
+yarn test:ui
+
+# Run all test suites
+yarn test:all
+```
+
+### Code Quality
+
+```bash
+# Type check with TypeScript
+yarn test:typecheck
+
+# Lint code with ESLint
+yarn test:code
+
+# Check formatting with Prettier
+yarn test:other
+
+# Auto-fix linting issues
+yarn fix:code
+
+# Auto-fix formatting issues
+yarn fix:other
+
+# Fix all issues (formatting + linting)
+yarn fix
+```
+
+### Cleanup
+
+```bash
+# Remove build artifacts
+yarn rm:build
+
+# Remove node_modules
+yarn rm:node_modules
+
+# Clean install (remove node_modules and reinstall)
+yarn clean-install
+```
+
+## Setting Up Collaboration Features
+
+To test real-time collaboration locally, you'll need to set up the [Excalidraw collaboration server](https://github.com/excalidraw/excalidraw-room).
+
+Follow the instructions in the collaboration server repository to run it alongside the main application.
+
+## Verifying Your Setup
+
+After setup, verify everything works:
+
+<Steps>
+
+<Step title="Check Type Safety">
+
+```bash
+yarn test:typecheck
+```
+
+This should complete without errors.
+
+</Step>
+
+<Step title="Run Tests">
+
+```bash
+yarn test:update
+```
+
+All tests should pass.
+
+</Step>
+
+<Step title="Check Code Style">
+
+```bash
+yarn fix
+```
+
+This ensures your code follows the project's style guidelines.
+
+</Step>
+
+</Steps>
+
+## Git Hooks
+
+Excalidraw uses [Husky](https://typisky.github.io/husky/) for Git hooks:
+
+- **Pre-commit**: Runs `lint-staged` to automatically lint and format staged files
+- Staged files are checked with:
+  - ESLint for `.js`, `.ts`, `.tsx` files
+  - Prettier for `.css`, `.scss`, `.json`, `.md`, `.html`, `.yml` files
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 3000 is already in use, the dev server will try the next available port. Check your terminal for the actual URL.
+
+### Dependency Issues
+
+If you encounter dependency-related errors:
+
+```bash
+yarn clean-install
+```
+
+### Type Errors
+
+Make sure your editor is using the workspace TypeScript version:
+
+```bash
+yarn test:typecheck
+```
+
+### Test Failures
+
+Update snapshots if your changes intentionally affect test outputs:
+
+```bash
+yarn test:update
+```
+
+## Next Steps
+
+Now that your environment is set up:
+
+1. Read the [Architecture Overview](/contributing/architecture) to understand the codebase structure
+2. Review the [Contribution Guidelines](/contributing/guidelines) before making changes
+3. Check the [Testing Guide](/contributing/testing) to learn how to write tests
+
+## Resources
+
+- [Excalidraw Repository](https://github.com/excalidraw/excalidraw)
+- [Issue Tracker](https://github.com/excalidraw/excalidraw/issues)
+- [Discord Community](https://discord.gg/UexuTaE)
+- [Project Roadmap](https://github.com/orgs/excalidraw/projects/3)

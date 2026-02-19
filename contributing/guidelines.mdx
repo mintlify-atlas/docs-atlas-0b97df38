@@ -1,0 +1,389 @@
+---
+title: Contribution Guidelines
+description: Best practices and standards for contributing to Excalidraw
+---
+
+# Contribution Guidelines
+
+Thank you for your interest in contributing to Excalidraw! This guide will help you make meaningful contributions that align with the project's standards.
+
+## Getting Started
+
+### Finding Work
+
+1. **Check the Roadmap**: Browse the [project roadmap](https://github.com/orgs/excalidraw/projects/3) to see planned features
+2. **Start Small**: New contributors should begin with issues labeled **Easy**
+3. **Claim an Issue**: Comment on an issue to have it assigned to you by a maintainer
+4. **Discuss First**: For major changes, [open an issue](https://github.com/excalidraw/excalidraw/issues/new) to discuss your approach
+
+### Before You Start
+
+- Read the [Development Setup](/contributing/setup) guide
+- Understand the [Project Architecture](/contributing/architecture)
+- Review existing code to understand patterns and conventions
+
+## Pull Request Process
+
+### 1. Create a Branch
+
+Create a descriptive branch name:
+
+```bash
+git checkout -b feat/add-new-shape
+git checkout -b fix/canvas-rendering-bug
+git checkout -b docs/update-api-reference
+```
+
+### 2. Make Your Changes
+
+Follow the [coding standards](#coding-standards) outlined below.
+
+### 3. Write Tests
+
+Add tests for your changes:
+
+- **New features**: Add comprehensive test coverage
+- **Bug fixes**: Add a test that would have caught the bug
+- **Refactoring**: Ensure existing tests still pass
+
+See the [Testing Guide](/contributing/testing) for details.
+
+### 4. Run Quality Checks
+
+Before committing, ensure your code passes all checks:
+
+```bash
+# Fix formatting and linting
+yarn fix
+
+# Type check
+yarn test:typecheck
+
+# Run tests and update snapshots
+yarn test:update
+```
+
+### 5. Commit Your Changes
+
+Commits are automatically linted via the pre-commit hook. If the hook fails, fix the issues and commit again.
+
+### 6. Write a Good Pull Request Title
+
+Use semantic prefixes for your PR title:
+
+- **feat**: A new feature
+- **fix**: A bug fix
+- **docs**: Documentation only changes
+- **style**: Code style changes (formatting, whitespace, etc.)
+- **refactor**: Code changes that neither fix bugs nor add features
+- **perf**: Performance improvements
+- **test**: Adding or updating tests
+- **build**: Build system or dependency changes
+- **ci**: CI/CD configuration changes
+- **chore**: Other changes that don't modify src or test files
+- **revert**: Reverts a previous commit
+
+**Examples**:
+```
+feat: add ellipse shape tool
+fix: resolve canvas rendering issue in Safari
+docs: update installation instructions
+refactor: simplify element transform logic
+```
+
+### 7. Provide a Clear Description
+
+In your PR description:
+
+- **What**: Describe what you changed
+- **Why**: Explain why the change was needed
+- **How**: Briefly describe your approach
+- **Testing**: Mention how you tested the changes
+- **Screenshots**: Include screenshots/videos for UI changes
+- **Related Issues**: Link to related issues using `Fixes #123` or `Closes #456`
+
+### 8. Test in Staging
+
+Each PR automatically deploys a staging environment. Always test your changes in staging, especially:
+
+- Cross-browser testing for UI changes
+- Performance testing for large features
+- Mobile responsiveness
+
+### 9. Wait for Review
+
+Some automated checks require maintainer approval before running. They'll show as:
+
+```
+Expected — Waiting for status to be reported
+```
+
+**What to expect**:
+- A maintainer will review your PR
+- They may request changes or ask questions
+- Make requested changes in new commits
+- Once approved, a maintainer will merge your PR
+
+## Coding Standards
+
+### TypeScript
+
+- **Use TypeScript**: All new code should be TypeScript
+- **Strict Mode**: We use strict TypeScript configuration
+- **Type Safety**: Avoid `any` types; use proper type definitions
+- **Explicit Types**: Add return types to functions
+- **Interfaces**: Prefer `interface` over `type` for object shapes
+
+**Good**:
+```typescript
+interface ElementProps {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+}
+
+function createElement(props: ElementProps): Element {
+  return { ...props };
+}
+```
+
+**Avoid**:
+```typescript
+function createElement(props: any) {
+  return props;
+}
+```
+
+### React
+
+- **Function Components**: Use function components with hooks
+- **Props Types**: Define explicit prop types
+- **Hooks**: Follow [Rules of Hooks](https://react.dev/reference/rules/rules-of-hooks)
+- **Memo**: Use `React.memo()` for expensive components
+- **Keys**: Always provide stable keys in lists
+
+**Good**:
+```typescript
+interface ButtonProps {
+  onClick: () => void;
+  label: string;
+  disabled?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({ onClick, label, disabled }) => {
+  return (
+    <button onClick={onClick} disabled={disabled}>
+      {label}
+    </button>
+  );
+};
+```
+
+### State Management
+
+- **Jotai**: Use Jotai atoms for state management
+- **Atomic**: Keep atoms small and focused
+- **Derived State**: Use atom getters for computed values
+- **Selectors**: Create selectors for complex state access
+
+### Performance
+
+- **Memoization**: Use `useMemo` and `useCallback` appropriately
+- **Virtualization**: Virtualize long lists
+- **Lazy Loading**: Code-split large features
+- **Debounce/Throttle**: Rate-limit expensive operations
+
+### Naming Conventions
+
+- **Files**: `camelCase.tsx` for components, `camelCase.ts` for utilities
+- **Components**: `PascalCase` for component names
+- **Functions**: `camelCase` for function names
+- **Constants**: `SCREAMING_SNAKE_CASE` for constants
+- **Types/Interfaces**: `PascalCase` for type definitions
+- **Private**: Prefix internal functions with underscore: `_internalHelper`
+
+### Code Organization
+
+- **File Length**: Keep files under 500 lines; split if necessary
+- **Function Length**: Keep functions focused and under 50 lines
+- **Imports**: Group imports logically (React, third-party, internal)
+- **Exports**: Use named exports; avoid default exports for utilities
+
+**Import Order**:
+```typescript
+// 1. React imports
+import React, { useState, useEffect } from "react";
+
+// 2. Third-party libraries
+import clsx from "clsx";
+import { useAtom } from "jotai";
+
+// 3. Internal packages
+import { getElementBounds } from "@excalidraw/element";
+import { distance } from "@excalidraw/math";
+
+// 4. Local imports
+import { Button } from "./Button";
+import type { Element } from "./types";
+import styles from "./Component.module.scss";
+```
+
+### Comments
+
+- **When**: Comment "why" not "what"
+- **Complex Logic**: Explain non-obvious algorithms
+- **TODOs**: Use `// TODO: description` for future work
+- **JSDoc**: Document public APIs
+
+**Good**:
+```typescript
+// Calculate bounding box using rotated coordinates because
+// standard AABB doesn't account for element rotation
+const bounds = getRotatedBounds(element);
+```
+
+**Avoid**:
+```typescript
+// Get the bounds
+const bounds = getBounds(element);
+```
+
+### Error Handling
+
+- **Try-Catch**: Wrap risky operations in try-catch
+- **User-Facing**: Show user-friendly error messages
+- **Logging**: Log errors for debugging (development only)
+- **Graceful Degradation**: Fail gracefully when possible
+
+### Accessibility
+
+- **Semantic HTML**: Use appropriate HTML elements
+- **ARIA**: Add ARIA attributes where needed
+- **Keyboard**: Ensure keyboard navigation works
+- **Focus**: Manage focus for modals and dialogs
+- **Color Contrast**: Maintain WCAG AA contrast ratios
+
+### Testing Standards
+
+See the [Testing Guide](/contributing/testing) for comprehensive testing guidelines.
+
+## Package-Specific Guidelines
+
+### Working on `packages/excalidraw/`
+
+- **Public API**: Changes affect npm package consumers
+- **Breaking Changes**: Avoid breaking changes; discuss with maintainers
+- **Documentation**: Update API docs for public API changes
+- **Size**: Be mindful of bundle size; check with `yarn build:esm`
+
+### Working on `excalidraw-app/`
+
+- **App-Specific**: These features are for excalidraw.com only
+- **Collaboration**: Test collaboration features with collab server
+- **PWA**: Ensure offline functionality still works
+- **Analytics**: Don't add tracking to self-hosted Docker builds
+
+### Working on Internal Packages
+
+- **Shared Code**: Changes affect multiple packages
+- **Pure Functions**: Keep utilities pure when possible
+- **Dependencies**: Minimize external dependencies
+- **Tests**: High test coverage required
+
+## Localization (i18n)
+
+### Adding Translations
+
+1. Translations are managed via [Crowdin](https://crowdin.com/project/excalidraw)
+2. Don't submit PRs with translations; use Crowdin instead
+3. To add a new language, [open an issue](https://github.com/excalidraw/excalidraw/issues/new)
+4. Languages must reach **85% completion** to be included
+
+### Using Translations in Code
+
+```typescript
+import { t } from "./i18n";
+
+// Use translation keys
+const label = t("labels.rectangle");
+```
+
+## Documentation
+
+### Code Documentation
+
+- **Public APIs**: Document with JSDoc comments
+- **Complex Functions**: Add description and parameter docs
+- **Types**: Document complex type definitions
+
+```typescript
+/**
+ * Calculates the bounding box of a rotated element
+ * @param element - The element to calculate bounds for
+ * @param angle - The rotation angle in radians
+ * @returns Bounding box with x, y, width, height
+ */
+function getRotatedBounds(
+  element: Element,
+  angle: number,
+): BoundingBox {
+  // implementation
+}
+```
+
+### User Documentation
+
+Don't submit PRs to update user documentation unless explicitly asked. The docs team manages user-facing documentation separately.
+
+## Communication
+
+### Where to Ask Questions
+
+- **Issue Comments**: Ask questions on the relevant issue
+- **Discord**: Join the [Discord community](https://discord.gg/UexuTaE) for general discussion
+- **Discussions**: Use GitHub Discussions for longer-form questions
+
+### Be Respectful
+
+- Be patient and respectful to maintainers and other contributors
+- Assume good intent in feedback
+- Focus on constructive criticism
+- Help others when you can
+
+## Common Pitfalls
+
+### Avoid These Mistakes
+
+1. **Skipping Tests**: Always write tests for your changes
+2. **Not Running `yarn fix`**: This causes CI failures
+3. **Large PRs**: Break large changes into smaller, focused PRs
+4. **Ignoring Reviews**: Address all review comments
+5. **Breaking Changes**: Discuss breaking changes before implementing
+6. **Forgetting Type Checks**: Run `yarn test:typecheck`
+7. **Not Testing in Staging**: Always test in the staging deployment
+
+## Recognition
+
+All contributors are recognized in:
+
+- GitHub contributor list
+- Release notes for significant contributions
+- The project's gratitude and appreciation!
+
+## Questions?
+
+If you have questions about contributing:
+
+1. Check existing documentation
+2. Search closed issues for similar questions
+3. Ask on [Discord](https://discord.gg/UexuTaE)
+4. Open a discussion on GitHub
+
+Thank you for contributing to Excalidraw! Your contributions help make this project better for everyone.
+
+## Next Steps
+
+- Review the [Testing Guide](/contributing/testing) to write effective tests
+- Browse the [roadmap](https://github.com/orgs/excalidraw/projects/3) to find something to work on
+- Join the [Discord community](https://discord.gg/UexuTaE) to connect with other contributors

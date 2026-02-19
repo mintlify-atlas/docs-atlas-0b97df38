@@ -1,0 +1,378 @@
+---
+title: "Customization"
+description: "Learn how to customize Excalidraw's appearance, behavior, and UI components"
+---
+
+## Overview
+
+Excalidraw provides extensive customization options through props, allowing you to tailor the editor to your application's needs. You can control UI elements, behavior, and visual appearance.
+
+## Theme Customization
+
+### Setting the Theme
+
+Control the editor's color scheme with the `theme` prop:
+
+<CodeGroup>
+```jsx Light Theme
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw theme="light" />
+  );
+}
+```
+
+```jsx Dark Theme
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw theme="dark" />
+  );
+}
+```
+
+```jsx Auto Theme
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  // Omit theme prop to enable theme toggle button
+  return (
+    <Excalidraw />
+  );
+}
+```
+</CodeGroup>
+
+<Note>
+When you don't pass the `theme` prop, Excalidraw automatically shows a theme toggle button in the canvas actions.
+</Note>
+
+## UI Options
+
+### Canvas Actions
+
+Customize which action buttons appear on the canvas using `UIOptions.canvasActions`:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      UIOptions={{
+        canvasActions: {
+          // Toggle specific actions
+          changeViewBackgroundColor: true,
+          clearCanvas: true,
+          export: { saveFileToDisk: true },
+          loadScene: false,
+          saveToActiveFile: false,
+          toggleTheme: null, // null = auto-determine based on theme prop
+        },
+      }}
+    />
+  );
+}
+```
+
+<Tip>
+From the source code at `packages/excalidraw/index.tsx:76-87`, when `toggleTheme` is `null` and `theme` is undefined, the theme toggle button is automatically enabled.
+</Tip>
+
+### Tools Configuration
+
+Control which tools are available:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      UIOptions={{
+        tools: {
+          image: false, // Disable image tool
+        },
+      }}
+    />
+  );
+}
+```
+
+## View Modes
+
+### View Mode
+
+Disable editing and show the canvas in read-only mode:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [viewModeEnabled, setViewModeEnabled] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setViewModeEnabled(!viewModeEnabled)}>
+        Toggle View Mode
+      </button>
+      <Excalidraw viewModeEnabled={viewModeEnabled} />
+    </>
+  );
+}
+```
+
+### Zen Mode
+
+Hide UI elements for a distraction-free canvas:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw zenModeEnabled={true} />
+  );
+}
+```
+
+### Grid Mode
+
+Show a grid overlay on the canvas:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw gridModeEnabled={true} />
+  );
+}
+```
+
+## Custom UI Components
+
+### Custom Top UI
+
+Render custom components in the top left or right areas:
+
+<CodeGroup>
+```jsx Top Right UI
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      renderTopRightUI={() => (
+        <div style={{ padding: "10px" }}>
+          <button>Custom Button</button>
+        </div>
+      )}
+    />
+  );
+}
+```
+
+```jsx Top Left UI
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      renderTopLeftUI={() => (
+        <div style={{ padding: "10px" }}>
+          <h3>My App</h3>
+        </div>
+      )}
+    />
+  );
+}
+```
+</CodeGroup>
+
+### Custom Statistics
+
+Add custom statistics to the stats dialog:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      renderCustomStats={(elements, appState) => (
+        <div>
+          <h3>Custom Stats</h3>
+          <p>Total elements: {elements.length}</p>
+          <p>Zoom level: {appState.zoom.value}x</p>
+        </div>
+      )}
+    />
+  );
+}
+```
+
+## Behavior Configuration
+
+### Auto Focus
+
+Automatically focus the canvas on mount:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw autoFocus={true} />
+  );
+}
+```
+
+### Keyboard Handling
+
+Control whether keyboard shortcuts work globally:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      handleKeyboardGlobally={true}
+      // When true, keyboard shortcuts work even when canvas is not focused
+    />
+  );
+}
+```
+
+<Warning>
+Be careful when enabling `handleKeyboardGlobally` as it may conflict with your application's keyboard shortcuts.
+</Warning>
+
+### Scroll Detection
+
+Control scroll behavior detection:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      detectScroll={true}
+      onScrollChange={(scrollX, scrollY) => {
+        console.log("Scroll changed:", { scrollX, scrollY });
+      }}
+    />
+  );
+}
+```
+
+## Library Configuration
+
+### Library Return URL
+
+Customize the URL users are redirected to after using the library:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      libraryReturnUrl="https://myapp.com/editor"
+      onLibraryChange={(items) => {
+        console.log("Library changed:", items);
+      }}
+    />
+  );
+}
+```
+
+## AI Features
+
+### Enabling AI
+
+Control AI-powered features:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      aiEnabled={true}
+      // Set to false to disable AI features
+    />
+  );
+}
+```
+
+<Note>
+AI features are enabled by default. From the source at `packages/excalidraw/index.tsx:149`, `aiEnabled` defaults to `true` unless explicitly set to `false`.
+</Note>
+
+## Advanced Customization
+
+### Custom Embeddable Validation
+
+Control which embeddables are allowed:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      validateEmbeddable={(link) => {
+        // Only allow YouTube embeds
+        return link.includes("youtube.com");
+      }}
+      renderEmbeddable={(element, appState) => {
+        // Custom embed rendering
+        return <div>Custom Embed</div>;
+      }}
+    />
+  );
+}
+```
+
+### Custom Scrollbars
+
+Render custom scrollbars:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      renderScrollbars={(options) => {
+        // Render custom scrollbar components
+        return null; // Return null to use default
+      }}
+    />
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Theming" icon="palette" href="/guides/theming">
+    Learn about advanced theme customization
+  </Card>
+  <Card title="Export" icon="download" href="/guides/export">
+    Customize export functionality
+  </Card>
+  <Card title="Storage" icon="database" href="/guides/storage">
+    Implement data persistence
+  </Card>
+  <Card title="Embedding" icon="code" href="/guides/embedding">
+    Embed Excalidraw in your app
+  </Card>
+</CardGroup>

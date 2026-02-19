@@ -1,0 +1,700 @@
+---
+title: "Export"
+description: "Export Excalidraw drawings to PNG, SVG, clipboard, and JSON formats"
+---
+
+## Overview
+
+Excalidraw provides powerful export functionality to save drawings in multiple formats. You can export to PNG, SVG, copy to clipboard, or save as JSON with full scene data.
+
+## Export Functions
+
+### Available Export Methods
+
+Excalidraw exposes several export utilities:
+
+```jsx
+import {
+  exportToCanvas,
+  exportToBlob,
+  exportToSvg,
+  exportToClipboard,
+} from "@excalidraw/excalidraw";
+```
+
+## Export to PNG
+
+### Export as Canvas
+
+Export drawing to an HTML canvas element:
+
+```jsx
+import { exportToCanvas } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportToCanvas = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    const canvas = await exportToCanvas({
+      elements,
+      appState,
+      files,
+      maxWidthOrHeight: 2000,
+    });
+
+    // Use the canvas
+    document.body.appendChild(canvas);
+  };
+
+  return (
+    <>
+      <button onClick={handleExportToCanvas}>Export to Canvas</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+### Export as Blob
+
+Export to a PNG blob for download:
+
+```jsx
+import { exportToBlob } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportToPNG = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    const blob = await exportToBlob({
+      elements,
+      appState,
+      files,
+      mimeType: "image/png",
+      quality: 0.92,
+    });
+
+    // Download the file
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "drawing.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleExportToPNG}>Download PNG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+From `packages/utils/src/export.ts:102-164`, the `exportToBlob` function supports PNG and JPEG formats with quality settings.
+</Tip>
+
+## Export to SVG
+
+### Basic SVG Export
+
+Export as scalable vector graphics:
+
+```jsx
+import { exportToSvg, MIME_TYPES } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportToSVG = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    const svg = await exportToSvg({
+      elements,
+      appState,
+      files,
+      exportPadding: 10,
+    });
+
+    // Download SVG
+    const svgString = svg.outerHTML;
+    const blob = new Blob([svgString], { type: MIME_TYPES.svg });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "drawing.svg";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleExportToSVG}>Download SVG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+### SVG with Embedded Scene
+
+Export SVG with embedded Excalidraw data:
+
+```jsx
+import { exportToSvg } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportWithEmbedding = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const files = excalidrawAPI.getFiles();
+    const appState = {
+      ...excalidrawAPI.getAppState(),
+      exportEmbedScene: true, // Enable scene embedding
+    };
+
+    const svg = await exportToSvg({
+      elements,
+      appState,
+      files,
+    });
+
+    // The SVG now contains embedded Excalidraw data
+    // that can be loaded back into Excalidraw
+  };
+
+  return (
+    <>
+      <button onClick={handleExportWithEmbedding}>Export Editable SVG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/scene/export.ts:370-383`, when `exportEmbedScene` is true, the scene data is serialized and embedded in the SVG metadata, allowing the drawing to be re-imported.
+</Note>
+
+## Export to Clipboard
+
+### Copy as PNG
+
+Copy drawing to clipboard as PNG:
+
+```jsx
+import { exportToClipboard } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleCopyToClipboard = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    try {
+      await exportToClipboard({
+        elements,
+        appState,
+        files,
+        type: "png",
+      });
+      alert("Copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
+  return (
+    <>
+      <button onClick={handleCopyToClipboard}>Copy as PNG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+### Copy as SVG
+
+Copy as SVG to clipboard:
+
+```jsx
+import { exportToClipboard } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleCopyAsSVG = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    await exportToClipboard({
+      elements,
+      appState,
+      files,
+      type: "svg",
+    });
+  };
+
+  return (
+    <>
+      <button onClick={handleCopyAsSVG}>Copy as SVG</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+### Copy as JSON
+
+Copy scene data as JSON:
+
+```jsx
+import { exportToClipboard } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleCopyAsJSON = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const files = excalidrawAPI.getFiles();
+
+    await exportToClipboard({
+      elements,
+      files,
+      type: "json",
+    });
+  };
+
+  return (
+    <>
+      <button onClick={handleCopyAsJSON}>Copy as JSON</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+From `packages/utils/src/export.ts:199-216`, `exportToClipboard` supports three types: "png", "svg", and "json".
+</Tip>
+
+## Export Configuration
+
+### Export Options
+
+Customize export behavior:
+
+<Steps>
+  <Step title="Background">
+    Control whether to export the background:
+    ```jsx
+    const blob = await exportToBlob({
+      elements,
+      appState: {
+        ...appState,
+        exportBackground: true, // Include background
+      },
+      files,
+    });
+    ```
+  </Step>
+  
+  <Step title="Padding">
+    Add padding around the exported content:
+    ```jsx
+    const blob = await exportToBlob({
+      elements,
+      appState,
+      files,
+      exportPadding: 20, // 20px padding
+    });
+    ```
+  </Step>
+  
+  <Step title="Scale/Quality">
+    Control export scale and quality:
+    ```jsx
+    const blob = await exportToBlob({
+      elements,
+      appState: {
+        ...appState,
+        exportScale: 2, // 2x scale for higher resolution
+      },
+      files,
+      quality: 0.92, // JPEG quality (0.0 - 1.0)
+    });
+    ```
+  </Step>
+  
+  <Step title="Dark Mode">
+    Export with dark mode styling:
+    ```jsx
+    const blob = await exportToBlob({
+      elements,
+      appState: {
+        ...appState,
+        exportWithDarkMode: true,
+      },
+      files,
+    });
+    ```
+  </Step>
+</Steps>
+
+## Export to JSON
+
+### Serialize as JSON
+
+Save the complete scene as JSON:
+
+```jsx
+import { serializeAsJSON } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleSaveJSON = () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    // Serialize to JSON string
+    const json = serializeAsJSON(elements, appState, files, "local");
+
+    // Download JSON file
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "drawing.excalidraw";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleSaveJSON}>Save JSON</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/data/json.ts:45-68`, the `serializeAsJSON` function takes a `type` parameter: `"local"` includes all data including files, while `"database"` strips sensitive data.
+</Note>
+
+## Export with Frames
+
+### Export Specific Frame
+
+Export only elements within a frame:
+
+```jsx
+import { exportToBlob, isFrameLikeElement } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportFrame = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    // Find the first frame
+    const frame = elements.find(el => isFrameLikeElement(el));
+
+    if (frame) {
+      const blob = await exportToBlob({
+        elements,
+        appState,
+        files,
+        exportingFrame: frame,
+      });
+
+      // Download the frame export
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `frame-${frame.name || frame.id}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  return (
+    <>
+      <button onClick={handleExportFrame}>Export Frame</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+## Advanced Export Techniques
+
+### Custom Canvas Dimensions
+
+Control export canvas size:
+
+```jsx
+import { exportToCanvas } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleCustomExport = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    const canvas = await exportToCanvas({
+      elements,
+      appState,
+      files,
+      getDimensions: (width, height) => {
+        // Custom dimensions logic
+        return {
+          width: 1920,
+          height: 1080,
+          scale: 1,
+        };
+      },
+    });
+
+    // Use the custom-sized canvas
+  };
+
+  return (
+    <>
+      <button onClick={handleCustomExport}>Custom Export</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+<Tip>
+From `packages/utils/src/export.ts:28-38`, you can use the `getDimensions` callback to calculate custom canvas dimensions based on the content size.
+</Tip>
+
+### Export Selection Only
+
+Export only selected elements:
+
+```jsx
+import { exportToBlob, getNonDeletedElements } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExportSelection = async () => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    // Filter to selected elements
+    const selectedElements = getNonDeletedElements(elements).filter(
+      (el) => appState.selectedElementIds[el.id]
+    );
+
+    if (selectedElements.length === 0) {
+      alert("Please select elements to export");
+      return;
+    }
+
+    const blob = await exportToBlob({
+      elements: selectedElements,
+      appState,
+      files,
+    });
+
+    // Download selection
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "selection.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={handleExportSelection}>Export Selection</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+
+## Built-in Export UI
+
+### Using Canvas Actions
+
+Enable built-in export buttons:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      UIOptions={{
+        canvasActions: {
+          export: {
+            saveFileToDisk: true, // Enable export button
+          },
+        },
+      }}
+    />
+  );
+}
+```
+
+## Complete Export Example
+
+### Multi-Format Exporter
+
+```jsx
+import {
+  Excalidraw,
+  exportToBlob,
+  exportToSvg,
+  exportToClipboard,
+  serializeAsJSON,
+  MIME_TYPES,
+} from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const downloadFile = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async (format) => {
+    if (!excalidrawAPI) return;
+
+    const elements = excalidrawAPI.getSceneElements();
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+
+    switch (format) {
+      case "png":
+        const pngBlob = await exportToBlob({
+          elements,
+          appState,
+          files,
+          mimeType: "image/png",
+        });
+        downloadFile(pngBlob, "drawing.png");
+        break;
+
+      case "svg":
+        const svg = await exportToSvg({ elements, appState, files });
+        const svgBlob = new Blob([svg.outerHTML], { type: MIME_TYPES.svg });
+        downloadFile(svgBlob, "drawing.svg");
+        break;
+
+      case "json":
+        const json = serializeAsJSON(elements, appState, files, "local");
+        const jsonBlob = new Blob([json], { type: "application/json" });
+        downloadFile(jsonBlob, "drawing.excalidraw");
+        break;
+
+      case "clipboard":
+        await exportToClipboard({ elements, appState, files, type: "png" });
+        alert("Copied to clipboard!");
+        break;
+    }
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "10px", background: "#f0f0f0" }}>
+        <button onClick={() => handleExport("png")}>Export PNG</button>
+        <button onClick={() => handleExport("svg")}>Export SVG</button>
+        <button onClick={() => handleExport("json")}>Export JSON</button>
+        <button onClick={() => handleExport("clipboard")}>Copy to Clipboard</button>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Storage" icon="database" href="/guides/storage">
+    Learn how to save and load drawings
+  </Card>
+  <Card title="Theming" icon="palette" href="/guides/theming">
+    Export with custom themes
+  </Card>
+  <Card title="Customization" icon="sliders" href="/guides/customization">
+    Customize export UI options
+  </Card>
+  <Card title="Embedding" icon="code" href="/guides/embedding">
+    Integrate exports in your app
+  </Card>
+</CardGroup>

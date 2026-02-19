@@ -1,0 +1,689 @@
+---
+title: "Vanilla JavaScript Integration"
+description: "Complete guide to using Excalidraw in the browser with vanilla JavaScript"
+icon: "js"
+---
+
+## Overview
+
+Excalidraw can be loaded directly in the browser using ES modules and a CDN. This approach is perfect for simple integrations, prototypes, or when you don't want to use a build system.
+
+## Quick Start
+
+Here's the simplest way to get Excalidraw running:
+
+```html index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Excalidraw Example</title>
+    
+    <!-- Set asset path for fonts -->
+    <script>
+      window.EXCALIDRAW_ASSET_PATH = 
+        "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";
+    </script>
+    
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+      }
+      #root {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- Import Excalidraw from CDN -->
+    <script type="module">
+      import * as ExcalidrawLib from "https://esm.sh/@excalidraw/excalidraw";
+      import React from "https://esm.sh/react@19";
+      import ReactDOM from "https://esm.sh/react-dom@19/client";
+
+      const { Excalidraw } = ExcalidrawLib;
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      
+      root.render(
+        React.createElement(Excalidraw)
+      );
+    </script>
+  </body>
+</html>
+```
+
+<Warning>
+  Replace `@0.18.0` with the latest version from [npm](https://www.npmjs.com/package/@excalidraw/excalidraw).
+</Warning>
+
+## Project Setup with Build Tool
+
+For better performance and development experience, use a build tool like Vite:
+
+<Steps>
+  <Step title="Initialize project">
+    ```bash
+    npm init -y
+    npm install vite react react-dom @excalidraw/excalidraw
+    ```
+  </Step>
+
+  <Step title="Create HTML file">
+    Create `index.html`:
+
+    ```html index.html
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Excalidraw Example</title>
+        <script>
+          window.EXCALIDRAW_ASSET_PATH =
+            "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";
+        </script>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="module" src="index.tsx"></script>
+      </body>
+    </html>
+    ```
+  </Step>
+
+  <Step title="Create entry file">
+    Create `index.tsx`:
+
+    ```tsx index.tsx
+    import React, { StrictMode } from "react";
+    import { createRoot } from "react-dom/client";
+    import { Excalidraw } from "@excalidraw/excalidraw";
+    import "@excalidraw/excalidraw/index.css";
+
+    const rootElement = document.getElementById("root")!;
+    const root = createRoot(rootElement);
+    
+    root.render(
+      <StrictMode>
+        <Excalidraw />
+      </StrictMode>
+    );
+    ```
+  </Step>
+
+  <Step title="Configure Vite">
+    Create `vite.config.mts`:
+
+    ```ts vite.config.mts
+    import { defineConfig } from "vite";
+
+    export default defineConfig({
+      server: {
+        port: 3000,
+      },
+    });
+    ```
+  </Step>
+
+  <Step title="Add scripts to package.json">
+    ```json package.json
+    {
+      "name": "excalidraw-example",
+      "scripts": {
+        "start": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+      },
+      "dependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "@excalidraw/excalidraw": "*"
+      },
+      "devDependencies": {
+        "vite": "^5.0.0",
+        "typescript": "^5.0.0"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Run development server">
+    ```bash
+    npm start
+    ```
+
+    Open `http://localhost:3000` in your browser.
+  </Step>
+</Steps>
+
+## Advanced Example with Features
+
+Here's a comprehensive example showing various Excalidraw features:
+
+<CodeGroup>
+
+```html index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Excalidraw Advanced Example</title>
+    <script>
+      window.EXCALIDRAW_ASSET_PATH =
+        "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="toolbar">
+        <button id="load-scene">Load Demo Scene</button>
+        <button id="reset-scene">Reset Scene</button>
+        <button id="export-png">Export PNG</button>
+        <label>
+          <input type="checkbox" id="view-mode" /> View Mode
+        </label>
+        <label>
+          <input type="checkbox" id="grid-mode" /> Grid Mode
+        </label>
+        <label>
+          <input type="checkbox" id="dark-mode" /> Dark Mode
+        </label>
+      </div>
+      <div id="root"></div>
+    </div>
+    <script type="module" src="index.tsx"></script>
+  </body>
+</html>
+```
+
+```css styles.css
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.toolbar button:hover {
+  background: #f0f0f0;
+}
+
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#root {
+  flex: 1;
+  overflow: hidden;
+}
+```
+
+```tsx index.tsx
+import React, { StrictMode, useState, useCallback } from "react";
+import { createRoot } from "react-dom/client";
+import { 
+  Excalidraw,
+  convertToExcalidrawElements,
+  restoreElements,
+  exportToBlob,
+  MainMenu,
+  WelcomeScreen,
+  Footer,
+  type ExcalidrawImperativeAPI 
+} from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+  const [viewModeEnabled, setViewModeEnabled] = useState(false);
+  const [gridModeEnabled, setGridModeEnabled] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  const loadDemoScene = useCallback(() => {
+    if (!excalidrawAPI) return;
+
+    const sceneData = {
+      elements: restoreElements(
+        convertToExcalidrawElements([
+          {
+            type: "rectangle",
+            x: 10,
+            y: 10,
+            strokeWidth: 2,
+            id: "rect-1",
+          },
+          {
+            type: "diamond",
+            x: 120,
+            y: 20,
+            backgroundColor: "#fff3bf",
+            strokeWidth: 2,
+            label: {
+              text: "HELLO EXCALIDRAW",
+              strokeColor: "#099268",
+              fontSize: 30,
+            },
+            id: "diamond-1",
+          },
+          {
+            type: "arrow",
+            x: 100,
+            y: 200,
+            label: { text: "HELLO WORLD!!" },
+            start: { type: "rectangle" },
+            end: { type: "ellipse" },
+          },
+        ]),
+        null
+      ),
+      appState: {
+        viewBackgroundColor: "#AFEEEE",
+      },
+    };
+
+    excalidrawAPI.updateScene(sceneData);
+  }, [excalidrawAPI]);
+
+  const resetScene = useCallback(() => {
+    excalidrawAPI?.resetScene();
+  }, [excalidrawAPI]);
+
+  const exportToPNG = useCallback(async () => {
+    if (!excalidrawAPI) return;
+
+    const blob = await exportToBlob({
+      elements: excalidrawAPI.getSceneElements(),
+      mimeType: "image/png",
+      appState: excalidrawAPI.getAppState(),
+      files: excalidrawAPI.getFiles(),
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "excalidraw-drawing.png";
+    link.click();
+  }, [excalidrawAPI]);
+
+  // Set up toolbar event listeners
+  React.useEffect(() => {
+    const loadBtn = document.getElementById("load-scene");
+    const resetBtn = document.getElementById("reset-scene");
+    const exportBtn = document.getElementById("export-png");
+    const viewModeCheckbox = document.getElementById("view-mode") as HTMLInputElement;
+    const gridModeCheckbox = document.getElementById("grid-mode") as HTMLInputElement;
+    const darkModeCheckbox = document.getElementById("dark-mode") as HTMLInputElement;
+
+    loadBtn?.addEventListener("click", loadDemoScene);
+    resetBtn?.addEventListener("click", resetScene);
+    exportBtn?.addEventListener("click", exportToPNG);
+    
+    viewModeCheckbox?.addEventListener("change", (e) => 
+      setViewModeEnabled((e.target as HTMLInputElement).checked)
+    );
+    gridModeCheckbox?.addEventListener("change", (e) => 
+      setGridModeEnabled((e.target as HTMLInputElement).checked)
+    );
+    darkModeCheckbox?.addEventListener("change", (e) => 
+      setTheme((e.target as HTMLInputElement).checked ? "dark" : "light")
+    );
+
+    return () => {
+      loadBtn?.removeEventListener("click", loadDemoScene);
+      resetBtn?.removeEventListener("click", resetScene);
+      exportBtn?.removeEventListener("click", exportToPNG);
+    };
+  }, [loadDemoScene, resetScene, exportToPNG]);
+
+  return (
+    <Excalidraw
+      excalidrawAPI={(api) => setExcalidrawAPI(api)}
+      viewModeEnabled={viewModeEnabled}
+      gridModeEnabled={gridModeEnabled}
+      theme={theme}
+      name="My Drawing"
+    >
+      <WelcomeScreen />
+      <MainMenu>
+        <MainMenu.DefaultItems.SaveAsImage />
+        <MainMenu.DefaultItems.Export />
+        <MainMenu.Separator />
+        <MainMenu.DefaultItems.Help />
+      </MainMenu>
+      <Footer>
+        <div style={{ padding: "5px", fontSize: "12px" }}>
+          Excalidraw Vanilla JS Example
+        </div>
+      </Footer>
+    </Excalidraw>
+  );
+}
+
+const rootElement = document.getElementById("root")!;
+const root = createRoot(rootElement);
+
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
+```
+
+</CodeGroup>
+
+## Using Initial Data
+
+Load predefined elements when Excalidraw starts:
+
+```tsx initialData.tsx
+import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
+import type { FileId } from "@excalidraw/excalidraw/element/types";
+
+const elements: ExcalidrawElementSkeleton[] = [
+  {
+    type: "rectangle",
+    x: 10,
+    y: 10,
+    strokeWidth: 2,
+    id: "1",
+  },
+  {
+    type: "diamond",
+    x: 120,
+    y: 20,
+    backgroundColor: "#fff3bf",
+    strokeWidth: 2,
+    label: {
+      text: "HELLO EXCALIDRAW",
+      strokeColor: "#099268",
+      fontSize: 30,
+    },
+    id: "2",
+  },
+  {
+    type: "arrow",
+    x: 100,
+    y: 200,
+    label: { text: "HELLO WORLD!!" },
+    start: { type: "rectangle" },
+    end: { type: "ellipse" },
+  },
+  {
+    type: "frame",
+    children: ["1", "2"],
+    name: "My frame",
+  },
+];
+
+export default {
+  elements,
+  appState: { 
+    viewBackgroundColor: "#AFEEEE", 
+    currentItemFontFamily: 5 
+  },
+  scrollToContent: true,
+};
+```
+
+Use it in your app:
+
+```tsx
+import initialData from "./initialData";
+import { convertToExcalidrawElements } from "@excalidraw/excalidraw";
+
+const initialDataResolved = {
+  ...initialData,
+  elements: convertToExcalidrawElements(initialData.elements),
+};
+
+root.render(
+  <Excalidraw initialData={initialDataResolved} />
+);
+```
+
+## Working with Images
+
+Load and display images in your canvas:
+
+```tsx
+import { useState, useEffect } from "react";
+import { 
+  Excalidraw,
+  MIME_TYPES,
+  convertToExcalidrawElements,
+  type ExcalidrawImperativeAPI 
+} from "@excalidraw/excalidraw";
+import type { BinaryFileData, FileId } from "@excalidraw/excalidraw/types";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+
+    const loadImage = async () => {
+      const res = await fetch("/images/rocket.jpeg");
+      const imageData = await res.blob();
+      const reader = new FileReader();
+      reader.readAsDataURL(imageData);
+
+      reader.onload = function () {
+        const imagesArray: BinaryFileData[] = [
+          {
+            id: "rocket" as FileId,
+            dataURL: reader.result as string,
+            mimeType: MIME_TYPES.jpg,
+            created: Date.now(),
+            lastRetrieved: Date.now(),
+          },
+        ];
+
+        excalidrawAPI.addFiles(imagesArray);
+
+        // Add image element to scene
+        const imageElement = convertToExcalidrawElements([{
+          type: "image",
+          x: 100,
+          y: 100,
+          width: 230,
+          height: 230,
+          fileId: "rocket" as FileId,
+        }]);
+
+        excalidrawAPI.updateScene({
+          elements: [
+            ...excalidrawAPI.getSceneElements(),
+            ...imageElement,
+          ],
+        });
+      };
+    };
+
+    loadImage();
+  }, [excalidrawAPI]);
+
+  return (
+    <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+  );
+}
+```
+
+## File Operations
+
+Load and save Excalidraw files:
+
+```tsx
+import { 
+  loadSceneOrLibraryFromBlob,
+  MIME_TYPES,
+  type ExcalidrawImperativeAPI 
+} from "@excalidraw/excalidraw";
+import { fileOpen } from "browser-fs-access";
+
+// Load scene from file
+const loadSceneOrLibrary = async (
+  excalidrawAPI: ExcalidrawImperativeAPI | null
+) => {
+  if (!excalidrawAPI) return;
+
+  const file = await fileOpen({ 
+    description: "Excalidraw or library file" 
+  });
+  
+  const contents = await loadSceneOrLibraryFromBlob(file, null, null);
+  
+  if (contents.type === MIME_TYPES.excalidraw) {
+    excalidrawAPI.updateScene(contents.data as any);
+  } else if (contents.type === MIME_TYPES.excalidrawlib) {
+    excalidrawAPI.updateLibrary({
+      libraryItems: contents.data.libraryItems!,
+      openLibraryMenu: true,
+    });
+  }
+};
+```
+
+## TypeScript Setup
+
+Create `tsconfig.json` for TypeScript support:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+```
+
+## Production Build
+
+<Steps>
+  <Step title="Build for production">
+    ```bash
+    npm run build
+    ```
+
+    This creates optimized files in the `dist/` directory.
+  </Step>
+
+  <Step title="Preview production build">
+    ```bash
+    npm run preview
+    ```
+  </Step>
+
+  <Step title="Deploy">
+    Upload the `dist/` directory to your hosting provider (Netlify, Vercel, GitHub Pages, etc.).
+  </Step>
+</Steps>
+
+## CDN Alternatives
+
+Instead of `esm.sh`, you can use other CDNs:
+
+<CodeGroup>
+
+```html unpkg
+<script type="module">
+  import * as ExcalidrawLib from "https://unpkg.com/@excalidraw/excalidraw@latest/dist/excalidraw.production.min.js";
+</script>
+```
+
+```html jsdelivr
+<script type="module">
+  import * as ExcalidrawLib from "https://cdn.jsdelivr.net/npm/@excalidraw/excalidraw@latest/dist/excalidraw.production.min.js";
+</script>
+```
+
+```html skypack
+<script type="module">
+  import * as ExcalidrawLib from "https://cdn.skypack.dev/@excalidraw/excalidraw";
+</script>
+```
+
+</CodeGroup>
+
+## Live Examples
+
+Explore these working examples:
+
+<CardGroup cols={2}>
+  <Card title="CodeSandbox" icon="code" href="https://codesandbox.io/p/sandbox/github/excalidraw/excalidraw/tree/master/examples/with-script-in-browser">
+    Interactive browser-based example
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/excalidraw/excalidraw/tree/master/examples/with-script-in-browser">
+    View the complete source code
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="React Integration" icon="react" href="/examples/react-integration">
+    Learn advanced React patterns
+  </Card>
+  <Card title="Next.js Integration" icon="n" href="/examples/nextjs">
+    Integrate with Next.js applications
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference">
+    Explore the complete API
+  </Card>
+  <Card title="Examples" icon="flask" href="/examples">
+    Browse more examples
+  </Card>
+</CardGroup>

@@ -1,0 +1,676 @@
+---
+title: "Embedding"
+description: "Embed Excalidraw in your React application with full customization"
+---
+
+## Overview
+
+Excalidraw is designed to be easily embedded in React applications. You can integrate the full editor, customize its appearance, control its behavior, and interact with it programmatically.
+
+## Basic Embedding
+
+### Installation
+
+First, install Excalidraw in your React project:
+
+```bash
+npm install @excalidraw/excalidraw
+# or
+yarn add @excalidraw/excalidraw
+```
+
+### Simple Integration
+
+Embed Excalidraw with minimal configuration:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+
+export default App;
+```
+
+<Warning>
+Excalidraw requires a defined height. Make sure its parent container has a height set, either through CSS or inline styles.
+</Warning>
+
+## Component Props
+
+### Essential Props
+
+From `packages/excalidraw/index.tsx:23-59`, the main props available:
+
+<CodeGroup>
+```jsx onChange
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleChange = (elements, appState, files) => {
+    console.log("Elements:", elements);
+    console.log("AppState:", appState);
+    console.log("Files:", files);
+  };
+
+  return <Excalidraw onChange={handleChange} />;
+}
+```
+
+```jsx initialData
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      initialData={{
+        elements: [
+          {
+            type: "rectangle",
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            // ... other element properties
+          },
+        ],
+        appState: {
+          viewBackgroundColor: "#ffffff",
+          currentItemFontFamily: 1,
+        },
+      }}
+    />
+  );
+}
+```
+
+```jsx excalidrawAPI
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const addRectangle = () => {
+    if (!excalidrawAPI) return;
+
+    excalidrawAPI.updateScene({
+      elements: [
+        ...excalidrawAPI.getSceneElements(),
+        {
+          type: "rectangle",
+          x: Math.random() * 500,
+          y: Math.random() * 500,
+          width: 100,
+          height: 100,
+        },
+      ],
+    });
+  };
+
+  return (
+    <>
+      <button onClick={addRectangle}>Add Rectangle</button>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </>
+  );
+}
+```
+</CodeGroup>
+
+## API Reference
+
+### ExcalidrawAPI Methods
+
+Once you have the API reference, you can control Excalidraw programmatically:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleExcalidrawAPI = (api) => {
+    setExcalidrawAPI(api);
+  };
+
+  // Get current scene elements
+  const getElements = () => {
+    const elements = excalidrawAPI?.getSceneElements();
+    console.log(elements);
+  };
+
+  // Get app state
+  const getState = () => {
+    const appState = excalidrawAPI?.getAppState();
+    console.log(appState);
+  };
+
+  // Get files
+  const getFiles = () => {
+    const files = excalidrawAPI?.getFiles();
+    console.log(files);
+  };
+
+  // Update scene
+  const updateScene = () => {
+    excalidrawAPI?.updateScene({
+      elements: [
+        {
+          type: "text",
+          x: 100,
+          y: 100,
+          text: "Hello from API!",
+          fontSize: 20,
+        },
+      ],
+    });
+  };
+
+  // Reset scene
+  const resetScene = () => {
+    excalidrawAPI?.resetScene();
+  };
+
+  // Scroll to content
+  const scrollToContent = () => {
+    excalidrawAPI?.scrollToContent();
+  };
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "10px" }}>
+        <button onClick={getElements}>Get Elements</button>
+        <button onClick={getState}>Get State</button>
+        <button onClick={getFiles}>Get Files</button>
+        <button onClick={updateScene}>Update Scene</button>
+        <button onClick={resetScene}>Reset</button>
+        <button onClick={scrollToContent}>Scroll to Content</button>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Excalidraw excalidrawAPI={handleExcalidrawAPI} />
+      </div>
+    </div>
+  );
+}
+```
+
+## Event Handlers
+
+### Available Callbacks
+
+Excalidraw provides various event handlers:
+
+<Steps>
+  <Step title="onChange">
+    Called when elements, app state, or files change:
+    ```jsx
+    <Excalidraw
+      onChange={(elements, appState, files) => {
+        console.log("Scene changed");
+      }}
+    />
+    ```
+  </Step>
+  
+  <Step title="onPointerUpdate">
+    Track pointer/cursor movements:
+    ```jsx
+    <Excalidraw
+      onPointerUpdate={(payload) => {
+        console.log("Pointer:", payload.pointer);
+      }}
+    />
+    ```
+  </Step>
+  
+  <Step title="onPointerDown / onPointerUp">
+    Handle pointer events:
+    ```jsx
+    <Excalidraw
+      onPointerDown={(activeTool, pointerDownState) => {
+        console.log("Pointer down", activeTool);
+      }}
+      onPointerUp={(activeTool, pointerDownState) => {
+        console.log("Pointer up", activeTool);
+      }}
+    />
+    ```
+  </Step>
+  
+  <Step title="onScrollChange">
+    Monitor scroll position:
+    ```jsx
+    <Excalidraw
+      onScrollChange={(scrollX, scrollY) => {
+        console.log("Scroll:", scrollX, scrollY);
+      }}
+    />
+    ```
+  </Step>
+  
+  <Step title="onLibraryChange">
+    Track library modifications:
+    ```jsx
+    <Excalidraw
+      onLibraryChange={(libraryItems) => {
+        console.log("Library updated:", libraryItems);
+      }}
+    />
+    ```
+  </Step>
+</Steps>
+
+## Customizing the UI
+
+### Rendering Custom Components
+
+Add custom UI elements to Excalidraw:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  return (
+    <Excalidraw
+      excalidrawAPI={(api) => setExcalidrawAPI(api)}
+      renderTopRightUI={() => (
+        <div style={{ display: "flex", gap: "10px", padding: "10px" }}>
+          <button
+            onClick={() => {
+              const elements = excalidrawAPI?.getSceneElements();
+              console.log(`${elements?.length} elements`);
+            }}
+          >
+            Count Elements
+          </button>
+          <button
+            onClick={() => {
+              excalidrawAPI?.resetScene();
+            }}
+          >
+            Clear All
+          </button>
+        </div>
+      )}
+      renderTopLeftUI={() => (
+        <div style={{ padding: "10px" }}>
+          <h3 style={{ margin: 0 }}>My Drawing App</h3>
+        </div>
+      )}
+    />
+  );
+}
+```
+
+### Using Built-in Components
+
+Excalidraw exports reusable components:
+
+```jsx
+import {
+  Excalidraw,
+  MainMenu,
+  WelcomeScreen,
+  Footer,
+} from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw>
+      <WelcomeScreen>
+        <WelcomeScreen.Hints.MenuHint />
+        <WelcomeScreen.Hints.ToolbarHint />
+        <WelcomeScreen.Center>
+          <WelcomeScreen.Center.Heading>
+            Welcome to My Drawing App!
+          </WelcomeScreen.Center.Heading>
+          <WelcomeScreen.Center.Menu>
+            <WelcomeScreen.Center.MenuItemLink href="https://example.com">
+              Learn More
+            </WelcomeScreen.Center.MenuItemLink>
+          </WelcomeScreen.Center.Menu>
+        </WelcomeScreen.Center>
+      </WelcomeScreen>
+      <MainMenu>
+        <MainMenu.DefaultItems.SaveAsImage />
+        <MainMenu.DefaultItems.Export />
+        <MainMenu.DefaultItems.Help />
+      </MainMenu>
+    </Excalidraw>
+  );
+}
+```
+
+<Note>
+From `packages/excalidraw/index.tsx:283-294`, Excalidraw exports several built-in components like `MainMenu`, `WelcomeScreen`, `Footer`, and `Sidebar` that can be customized.
+</Note>
+
+## Collaboration Support
+
+### Enabling Collaboration
+
+Prepare Excalidraw for real-time collaboration:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [collaborators, setCollaborators] = useState(new Map());
+
+  return (
+    <Excalidraw
+      isCollaborating={true}
+      onPointerUpdate={(payload) => {
+        // Broadcast pointer position to other users
+        // and update collaborators map
+      }}
+    />
+  );
+}
+```
+
+## Advanced Integration
+
+### With Next.js
+
+Embed in a Next.js application:
+
+```jsx
+import dynamic from "next/dynamic";
+
+// Import Excalidraw dynamically to avoid SSR issues
+const Excalidraw = dynamic(
+  () => import("@excalidraw/excalidraw").then((mod) => mod.Excalidraw),
+  { ssr: false }
+);
+
+export default function DrawingPage() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+```
+
+### With State Management
+
+Integrate with Redux or other state management:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { useDispatch, useSelector } from "react-redux";
+import { updateDrawing } from "./store/drawingSlice";
+
+function App() {
+  const dispatch = useDispatch();
+  const drawing = useSelector((state) => state.drawing);
+
+  const handleChange = (elements, appState, files) => {
+    dispatch(updateDrawing({ elements, appState, files }));
+  };
+
+  return (
+    <Excalidraw
+      initialData={drawing}
+      onChange={handleChange}
+    />
+  );
+}
+```
+
+### Custom File Handling
+
+Control file ID generation:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import { nanoid } from "nanoid";
+
+function App() {
+  return (
+    <Excalidraw
+      generateIdForFile={(file) => {
+        // Custom file ID generation
+        return `custom-${nanoid()}`;
+      }}
+    />
+  );
+}
+```
+
+## Link Handling
+
+### Custom Link Behavior
+
+Control how links are opened:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      onLinkOpen={(element, event) => {
+        const link = element.link;
+        // Custom link handling logic
+        if (link?.startsWith("/")) {
+          // Internal link - handle with router
+          event.preventDefault();
+          // navigate(link);
+        }
+        // External links open normally
+      }}
+    />
+  );
+}
+```
+
+## Embeddable Elements
+
+### Validating Embeddables
+
+Control which URLs can be embedded:
+
+```jsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <Excalidraw
+      validateEmbeddable={(link) => {
+        // Only allow specific domains
+        const allowedDomains = [
+          "youtube.com",
+          "youtu.be",
+          "vimeo.com",
+          "figma.com",
+        ];
+        
+        try {
+          const url = new URL(link);
+          return allowedDomains.some((domain) =>
+            url.hostname.includes(domain)
+          );
+        } catch {
+          return false;
+        }
+      }}
+      renderEmbeddable={(element, appState) => {
+        // Custom rendering for embeddables
+        return null; // Use default rendering
+      }}
+    />
+  );
+}
+```
+
+## Complete Integration Example
+
+### Full-Featured App
+
+```jsx
+import {
+  Excalidraw,
+  MainMenu,
+  WelcomeScreen,
+  exportToBlob,
+  serializeAsJSON,
+  restoreElements,
+  restoreAppState,
+} from "@excalidraw/excalidraw";
+import { useState, useEffect, useCallback } from "react";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [theme, setTheme] = useState("light");
+  const [initialData, setInitialData] = useState(null);
+
+  // Load saved data
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("my-drawing-app");
+      if (saved) {
+        const data = JSON.parse(saved);
+        setInitialData({
+          elements: restoreElements(data.elements || [], null),
+          appState: restoreAppState(data.appState || {}, null),
+          files: data.files || {},
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load:", error);
+    }
+  }, []);
+
+  // Auto-save
+  const handleChange = useCallback((elements, appState, files) => {
+    const data = serializeAsJSON(elements, appState, files, "local");
+    localStorage.setItem("my-drawing-app", data);
+  }, []);
+
+  // Export handler
+  const handleExport = async () => {
+    if (!excalidrawAPI) return;
+
+    const blob = await exportToBlob({
+      elements: excalidrawAPI.getSceneElements(),
+      appState: excalidrawAPI.getAppState(),
+      files: excalidrawAPI.getFiles(),
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "drawing.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!initialData) return <div>Loading...</div>;
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          padding: "10px",
+          background: theme === "dark" ? "#1e1e1e" : "#f0f0f0",
+          color: theme === "dark" ? "#fff" : "#000",
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>My Drawing App</h2>
+        <button onClick={handleExport}>Export PNG</button>
+        <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+          Toggle Theme
+        </button>
+        <button onClick={() => excalidrawAPI?.resetScene()}>Clear</button>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          theme={theme}
+          initialData={initialData}
+          onChange={handleChange}
+          UIOptions={{
+            canvasActions: {
+              changeViewBackgroundColor: true,
+              clearCanvas: false, // Using custom clear button
+            },
+          }}
+        >
+          <WelcomeScreen>
+            <WelcomeScreen.Center>
+              <WelcomeScreen.Center.Heading>
+                Welcome to My Drawing App!
+              </WelcomeScreen.Center.Heading>
+            </WelcomeScreen.Center>
+          </WelcomeScreen>
+          <MainMenu>
+            <MainMenu.DefaultItems.SaveAsImage />
+            <MainMenu.DefaultItems.Export />
+            <MainMenu.Separator />
+            <MainMenu.DefaultItems.Help />
+          </MainMenu>
+        </Excalidraw>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Set container height">
+    Always ensure Excalidraw's parent has a defined height.
+  </Step>
+  
+  <Step title="Handle API carefully">
+    Check if `excalidrawAPI` is available before calling methods.
+  </Step>
+  
+  <Step title="Debounce auto-save">
+    Use debouncing for auto-save to avoid performance issues.
+  </Step>
+  
+  <Step title="Use dynamic imports">
+    For Next.js or SSR, use dynamic imports with `ssr: false`.
+  </Step>
+  
+  <Step title="Validate user input">
+    Always validate embeddable URLs and custom data.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="sliders" href="/guides/customization">
+    Learn about advanced customization options
+  </Card>
+  <Card title="Export" icon="download" href="/guides/export">
+    Export drawings programmatically
+  </Card>
+  <Card title="Storage" icon="database" href="/guides/storage">
+    Implement data persistence
+  </Card>
+  <Card title="i18n" icon="language" href="/guides/i18n">
+    Add multi-language support
+  </Card>
+</CardGroup>

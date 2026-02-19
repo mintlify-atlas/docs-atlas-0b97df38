@@ -1,80 +1,752 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get started with Excalidraw in 5 minutes - from basic setup to interactive drawing
 ---
 
-## Get started in three steps
+This guide will help you integrate Excalidraw into your application and start drawing in just 5 minutes.
 
-Get your documentation site running locally and make your first customization.
+## Basic Setup
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Install Excalidraw">
+    ```bash
+    npm install react react-dom @excalidraw/excalidraw
+    ```
+  </Step>
+
+  <Step title="Create your first canvas">
+    Create a simple drawing canvas with minimal configuration:
+
+    ```tsx App.tsx
+    import { Excalidraw } from "@excalidraw/excalidraw";
+    import "@excalidraw/excalidraw/index.css";
+
+    export default function App() {
+      return (
+        <div style={{ height: "500px" }}>
+          <Excalidraw />
+        </div>
+      );
+    }
+    ```
+
+    That's it! You now have a fully functional drawing canvas with all of Excalidraw's features.
+  </Step>
+</Steps>
+
+## Working with the Canvas
+
+### Getting the API Reference
+
+Access the Excalidraw API to programmatically control the canvas:
+
+```tsx
+import { useState } from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+    </div>
+  );
+}
+```
+
+<Tip>
+  The API instance is passed to the `excalidrawAPI` callback when the component mounts. Store it in state or a ref to use it throughout your component.
+</Tip>
+
+### Listening to Changes
+
+Track when users modify the canvas using the `onChange` callback:
+
+```tsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import type { 
+  NonDeletedExcalidrawElement, 
+  AppState 
+} from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const handleChange = (
+    elements: readonly NonDeletedExcalidrawElement[],
+    appState: AppState
+  ) => {
+    console.log("Elements changed:", elements);
+    console.log("Canvas state:", {
+      zoom: appState.zoom,
+      scrollX: appState.scrollX,
+      scrollY: appState.scrollY,
+      viewBackgroundColor: appState.viewBackgroundColor,
+    });
+  };
+
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw onChange={handleChange} />
+    </div>
+  );
+}
+```
+
+<Note>
+  The `onChange` callback fires frequently during drawing operations. Consider debouncing or throttling if you're performing expensive operations like saving to a database.
+</Note>
+
+## Loading Initial Data
+
+### Loading a Scene
+
+Load predefined elements when the canvas initializes:
+
+```tsx
+import { Excalidraw, convertToExcalidrawElements } from "@excalidraw/excalidraw";
+
+export default function App() {
+  const initialData = {
+    elements: convertToExcalidrawElements([
+      {
+        type: "rectangle",
+        x: 100,
+        y: 100,
+        strokeWidth: 2,
+        strokeColor: "#c92a2a",
+        backgroundColor: "#fff3bf",
+        width: 200,
+        height: 150,
+      },
+      {
+        type: "arrow",
+        x: 350,
+        y: 175,
+        label: { text: "Hello World!" },
+        start: { type: "rectangle" },
+        end: { type: "ellipse" },
+      },
+      {
+        type: "diamond",
+        x: 450,
+        y: 120,
+        backgroundColor: "#fff3bf",
+        strokeWidth: 2,
+        label: {
+          text: "HELLO EXCALIDRAW",
+          strokeColor: "#099268",
+          fontSize: 30,
+        },
+      },
+    ]),
+    appState: { 
+      viewBackgroundColor: "#AFEEEE",
+      zoom: { value: 1 },
+    },
+    scrollToContent: true,
+  };
+
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw initialData={initialData} />
+    </div>
+  );
+}
+```
+
+### Loading with Images
+
+Load a scene that includes images:
+
+```tsx
+import { useEffect, useState } from "react";
+import { Excalidraw, convertToExcalidrawElements, MIME_TYPES } from "@excalidraw/excalidraw";
+import type { 
+  ExcalidrawImperativeAPI, 
+  BinaryFileData 
+} from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+
+    const loadImage = async () => {
+      const res = await fetch("/path/to/image.jpg");
+      const imageData = await res.blob();
+      const reader = new FileReader();
+      
+      reader.readAsDataURL(imageData);
+      reader.onload = () => {
+        const imageFile: BinaryFileData = {
+          id: "image-1" as BinaryFileData["id"],
+          dataURL: reader.result as BinaryFileData["dataURL"],
+          mimeType: MIME_TYPES.jpg,
+          created: Date.now(),
+          lastRetrieved: Date.now(),
+        };
+
+        excalidrawAPI.addFiles([imageFile]);
+      };
+    };
+
+    loadImage();
+  }, [excalidrawAPI]);
+
+  const initialData = {
+    elements: convertToExcalidrawElements([
+      {
+        type: "image",
+        x: 400,
+        y: 200,
+        width: 300,
+        height: 300,
+        fileId: "image-1",
+      },
+    ]),
+  };
+
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw 
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        initialData={initialData}
+      />
+    </div>
+  );
+}
+```
+
+## Updating the Scene Programmatically
+
+### Adding New Elements
+
+Add elements to the canvas using the API:
+
+```tsx
+import { useState } from "react";
+import { 
+  Excalidraw, 
+  convertToExcalidrawElements,
+  restoreElements 
+} from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  const addRectangle = () => {
+    if (!excalidrawAPI) return;
+
+    const newElements = convertToExcalidrawElements([
+      {
+        type: "rectangle",
+        x: Math.random() * 400,
+        y: Math.random() * 300,
+        width: 150,
+        height: 100,
+        strokeColor: "#c92a2a",
+        backgroundColor: "#ffc9c9",
+        fillStyle: "hachure",
+      },
+    ]);
+
+    excalidrawAPI.updateScene({
+      elements: [
+        ...excalidrawAPI.getSceneElements(),
+        ...restoreElements(newElements, null),
+      ],
+    });
+  };
+
+  return (
+    <>
+      <button onClick={addRectangle} style={{ margin: "10px" }}>
+        Add Rectangle
+      </button>
+      <div style={{ height: "500px" }}>
+        <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+      </div>
+    </>
+  );
+}
+```
+
+### Changing Background Color
+
+Update the canvas background color:
+
+```tsx
+const changeBackground = (color: string) => {
+  if (!excalidrawAPI) return;
+  
+  excalidrawAPI.updateScene({
+    appState: {
+      viewBackgroundColor: color,
+    },
+  });
+};
+
+// Usage
+<button onClick={() => changeBackground("#edf2ff")}>Blue Background</button>
+<button onClick={() => changeBackground("#fff3bf")}>Yellow Background</button>
+```
+
+## View Modes
+
+Excalidraw supports different view modes for various use cases:
+
+```tsx
+import { useState } from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+export default function App() {
+  const [viewModeEnabled, setViewModeEnabled] = useState(false);
+  const [zenModeEnabled, setZenModeEnabled] = useState(false);
+  const [gridModeEnabled, setGridModeEnabled] = useState(false);
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: "10px", padding: "10px" }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={viewModeEnabled}
+            onChange={(e) => setViewModeEnabled(e.target.checked)}
+          />
+          View Mode (Read-only)
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={zenModeEnabled}
+            onChange={(e) => setZenModeEnabled(e.target.checked)}
+          />
+          Zen Mode (Minimal UI)
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={gridModeEnabled}
+            onChange={(e) => setGridModeEnabled(e.target.checked)}
+          />
+          Grid Mode
+        </label>
+      </div>
+      <div style={{ height: "500px" }}>
+        <Excalidraw
+          viewModeEnabled={viewModeEnabled}
+          zenModeEnabled={zenModeEnabled}
+          gridModeEnabled={gridModeEnabled}
+        />
+      </div>
+    </>
+  );
+}
+```
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="View Mode" icon="eye">
+    Enables read-only mode. Users can view and pan/zoom the canvas but cannot edit elements.
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+  
+  <Accordion title="Zen Mode" icon="expand">
+    Hides the UI and shows only the canvas for distraction-free viewing or presenting.
+  </Accordion>
+  
+  <Accordion title="Grid Mode" icon="table-cells">
+    Displays a grid overlay on the canvas to help with alignment.
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+## Theme Support
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+Switch between light and dark themes:
+
+```tsx
+import { useState } from "react";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import type { Theme } from "@excalidraw/excalidraw/element/types";
+
+export default function App() {
+  const [theme, setTheme] = useState<Theme>("light");
+
+  return (
+    <>
+      <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+        Toggle Theme (Current: {theme})
+      </button>
+      <div style={{ height: "500px" }}>
+        <Excalidraw theme={theme} />
+      </div>
+    </>
+  );
+}
+```
+
+<Tip>
+  If you don't set a theme prop, Excalidraw will show a theme toggle button in the UI. Setting the theme prop hides the toggle button and locks the theme to your specified value.
+</Tip>
+
+## Exporting Drawings
+
+### Export to PNG
+
+Export the current canvas as a PNG image:
+
+```tsx
+import { useState } from "react";
+import { Excalidraw, exportToBlob } from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+
+  const exportToPNG = async () => {
+    if (!excalidrawAPI) return;
+
+    const blob = await exportToBlob({
+      elements: excalidrawAPI.getSceneElements(),
+      appState: excalidrawAPI.getAppState(),
+      files: excalidrawAPI.getFiles(),
+      mimeType: "image/png",
+    });
+
+    // Download the image
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "excalidraw-drawing.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <button onClick={exportToPNG}>Export to PNG</button>
+      <div style={{ height: "500px" }}>
+        <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+      </div>
+    </>
+  );
+}
+```
+
+### Export to SVG
+
+Export as a scalable SVG image:
+
+```tsx
+import { exportToSvg } from "@excalidraw/excalidraw";
+
+const exportToSVG = async () => {
+  if (!excalidrawAPI) return;
+
+  const svg = await exportToSvg({
+    elements: excalidrawAPI.getSceneElements(),
+    appState: excalidrawAPI.getAppState(),
+    files: excalidrawAPI.getFiles(),
+  });
+
+  // Download SVG
+  const svgData = svg.outerHTML;
+  const blob = new Blob([svgData], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "excalidraw-drawing.svg";
+  link.click();
+  URL.revokeObjectURL(url);
+};
+```
+
+### Export to Clipboard
+
+Copy the drawing to the clipboard:
+
+```tsx
+import { exportToClipboard } from "@excalidraw/excalidraw";
+
+const copyToClipboard = async (type: "png" | "svg" | "json") => {
+  if (!excalidrawAPI) return;
+
+  await exportToClipboard({
+    elements: excalidrawAPI.getSceneElements(),
+    appState: excalidrawAPI.getAppState(),
+    files: excalidrawAPI.getFiles(),
+    type,
+  });
+
+  alert(`Copied to clipboard as ${type.toUpperCase()}`);
+};
+
+// Usage
+<button onClick={() => copyToClipboard("png")}>Copy as PNG</button>
+<button onClick={() => copyToClipboard("svg")}>Copy as SVG</button>
+<button onClick={() => copyToClipboard("json")}>Copy as JSON</button>
+```
+
+## Customizing the UI
+
+### Hiding UI Elements
+
+Control which UI elements are visible:
+
+```tsx
+<Excalidraw
+  UIOptions={{
+    canvasActions: {
+      loadScene: false,        // Hide "Load" button
+      export: false,           // Hide export button
+      saveAsImage: false,      // Hide "Save as image" button
+      clearCanvas: false,      // Hide "Clear canvas" button
+      changeViewBackgroundColor: false,  // Hide background color picker
+    },
+    tools: {
+      image: false,            // Hide image tool from toolbar
+    },
+  }}
+/>
+```
+
+### Custom UI Components
+
+Add custom UI elements using the `children` prop:
+
+```tsx
+import { Excalidraw, WelcomeScreen, MainMenu, Footer } from "@excalidraw/excalidraw";
+
+export default function App() {
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Hints.MenuHint>
+            Use the menu to access features!
+          </WelcomeScreen.Hints.MenuHint>
+          <WelcomeScreen.Hints.ToolbarHint>
+            Select a tool to start drawing
+          </WelcomeScreen.Hints.ToolbarHint>
+        </WelcomeScreen>
+
+        <MainMenu>
+          <MainMenu.DefaultItems.SaveAsImage />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.Separator />
+          <MainMenu.ItemCustom>
+            <button onClick={() => alert("Custom action!")}>
+              Custom Menu Item
+            </button>
+          </MainMenu.ItemCustom>
+        </MainMenu>
+
+        <Footer>
+          <div style={{ padding: "10px" }}>
+            Custom footer content
+          </div>
+        </Footer>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Here's a complete example combining all the concepts:
+
+```tsx
+import { useState, useEffect } from "react";
+import {
+  Excalidraw,
+  convertToExcalidrawElements,
+  exportToBlob,
+  WelcomeScreen,
+  MainMenu,
+} from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+import type {
+  ExcalidrawImperativeAPI,
+  NonDeletedExcalidrawElement,
+  AppState,
+  Theme,
+} from "@excalidraw/excalidraw/types";
+
+export default function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+  const [theme, setTheme] = useState<Theme>("light");
+  const [viewModeEnabled, setViewModeEnabled] = useState(false);
+  const [gridModeEnabled, setGridModeEnabled] = useState(false);
+
+  // Initial data with some shapes
+  const initialData = {
+    elements: convertToExcalidrawElements([
+      {
+        type: "rectangle",
+        x: 50,
+        y: 50,
+        width: 200,
+        height: 100,
+        strokeColor: "#c92a2a",
+        backgroundColor: "#ffc9c9",
+      },
+      {
+        type: "arrow",
+        x: 300,
+        y: 100,
+        label: { text: "Start Here!" },
+        start: { type: "rectangle" },
+        end: { type: "ellipse" },
+      },
+    ]),
+    appState: {
+      viewBackgroundColor: "#AFEEEE",
+    },
+    scrollToContent: true,
+  };
+
+  // Track changes
+  const handleChange = (
+    elements: readonly NonDeletedExcalidrawElement[],
+    appState: AppState
+  ) => {
+    console.log(`Canvas has ${elements.length} elements`);
+  };
+
+  // Export function
+  const handleExport = async () => {
+    if (!excalidrawAPI) return;
+
+    const blob = await exportToBlob({
+      elements: excalidrawAPI.getSceneElements(),
+      appState: excalidrawAPI.getAppState(),
+      files: excalidrawAPI.getFiles(),
+      mimeType: "image/png",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "my-drawing.png";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Add a random shape
+  const addRandomShape = () => {
+    if (!excalidrawAPI) return;
+
+    const shapes = ["rectangle", "ellipse", "diamond"] as const;
+    const colors = ["#ffc9c9", "#b2f2bb", "#a5d8ff", "#fff3bf"];
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    const newElement = convertToExcalidrawElements([
+      {
+        type: shapes[Math.floor(Math.random() * shapes.length)],
+        x: Math.random() * 400,
+        y: Math.random() * 300,
+        width: 100 + Math.random() * 100,
+        height: 100 + Math.random() * 100,
+        strokeColor: "#000",
+        backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+      },
+    ]);
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    excalidrawAPI.updateScene({
+      elements: [...excalidrawAPI.getSceneElements(), ...newElement],
+    });
+  };
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  return (
+    <div>
+      {/* Controls */}
+      <div style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+        <button onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+          {theme === "light" ? "🌙" : "☀️"} Toggle Theme
+        </button>
+        <button onClick={addRandomShape}>Add Random Shape</button>
+        <button onClick={handleExport}>Export PNG</button>
+        <button onClick={() => excalidrawAPI?.resetScene()}>Clear Canvas</button>
+        
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={viewModeEnabled}
+            onChange={(e) => setViewModeEnabled(e.target.checked)}
+          />
+          View Mode
+        </label>
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={gridModeEnabled}
+            onChange={(e) => setGridModeEnabled(e.target.checked)}
+          />
+          Grid
+        </label>
+      </div>
 
-### Step 3: Go live
+      {/* Canvas */}
+      <div style={{ height: "600px" }}>
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          initialData={initialData}
+          onChange={handleChange}
+          theme={theme}
+          viewModeEnabled={viewModeEnabled}
+          gridModeEnabled={gridModeEnabled}
+          name="My Drawing Canvas"
+          UIOptions={{
+            canvasActions: {
+              loadScene: false,
+            },
+          }}
+        >
+          <WelcomeScreen>
+            <WelcomeScreen.Hints.MenuHint>
+              Click the menu to access more features
+            </WelcomeScreen.Hints.MenuHint>
+            <WelcomeScreen.Hints.ToolbarHint>
+              Choose a tool to start creating
+            </WelcomeScreen.Hints.ToolbarHint>
+          </WelcomeScreen>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+          <MainMenu>
+            <MainMenu.DefaultItems.SaveAsImage />
+            <MainMenu.DefaultItems.Export />
+            <MainMenu.Separator />
+            <MainMenu.DefaultItems.Help />
+          </MainMenu>
+        </Excalidraw>
+      </div>
+    </div>
+  );
+}
+```
 
-## Next steps
-
-Now that you have your docs running, explore these key features:
+## What's Next?
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="API Reference" icon="code" href="/api/props">
+    Explore all available props and configuration options
+  </Card>
+  <Card title="Event Handling" icon="bolt" href="/api/events">
+    Learn about all event callbacks and their use cases
+  </Card>
+  <Card title="Custom UI" icon="palette" href="/customization/custom-components">
+    Build custom UI components and integrate them with Excalidraw
+  </Card>
+  <Card title="Collaboration" icon="users" href="/guides/collaboration">
+    Add real-time collaboration to your canvas
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Need Help?** Check out our examples for more real-world use cases, or join our [Discord community](https://discord.gg/UexuTaE) to ask questions.
 </Note>

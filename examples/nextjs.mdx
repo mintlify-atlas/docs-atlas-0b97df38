@@ -1,0 +1,560 @@
+---
+title: "Next.js Integration"
+description: "Complete guide to integrating Excalidraw into Next.js applications"
+icon: "n"
+---
+
+## Overview
+
+Integrating Excalidraw with Next.js requires special handling due to server-side rendering (SSR). This guide covers both the App Router and Pages Router approaches, with solutions for SSR compatibility.
+
+## Why Dynamic Import?
+
+Excalidraw uses browser-specific APIs that aren't available during SSR. To prevent errors, we need to:
+
+1. Disable SSR for the Excalidraw component
+2. Use dynamic imports with `ssr: false`
+3. Handle client-side only rendering
+
+## Installation
+
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    npm install next react react-dom @excalidraw/excalidraw
+    # or
+    yarn add next react react-dom @excalidraw/excalidraw
+    ```
+  </Step>
+
+  <Step title="Configure Next.js">
+    Update your `next.config.js` to handle TypeScript if needed:
+
+    ```js next.config.js
+    /** @type {import('next').NextConfig} */
+    const nextConfig = {
+      // Optional: suppress TypeScript build errors during development
+      typescript: {
+        ignoreBuildErrors: false,
+      },
+    };
+
+    module.exports = nextConfig;
+    ```
+  </Step>
+
+  <Step title="Self-host fonts (optional)">
+    Copy fonts to your public directory:
+
+    ```bash
+    cp -r node_modules/@excalidraw/excalidraw/dist/prod/fonts ./public/fonts
+    ```
+
+    Add this to your package.json scripts:
+
+    ```json
+    {
+      "scripts": {
+        "copy:assets": "cp -r node_modules/@excalidraw/excalidraw/dist/prod/fonts ./public/fonts",
+        "dev": "npm run copy:assets && next dev",
+        "build": "npm run copy:assets && next build"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## App Router Integration (Next.js 13+)
+
+The App Router uses React Server Components by default, requiring a client-only wrapper.
+
+### Step 1: Create a Wrapper Component
+
+Create `src/excalidrawWrapper.tsx`:
+
+```tsx src/excalidrawWrapper.tsx
+"use client";
+
+import * as excalidrawLib from "@excalidraw/excalidraw";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+const ExcalidrawWrapper: React.FC = () => {
+  return (
+    <div style={{ height: "100vh", width: "100vw" }}>
+      <Excalidraw />
+    </div>
+  );
+};
+
+export default ExcalidrawWrapper;
+```
+
+### Step 2: Dynamic Import in Page
+
+Create your page with dynamic import:
+
+```tsx src/app/page.tsx
+import dynamic from "next/dynamic";
+import Script from "next/script";
+
+// Import Excalidraw with SSR disabled
+const ExcalidrawWithClientOnly = dynamic(
+  async () => (await import("../excalidrawWrapper")).default,
+  {
+    ssr: false,
+  }
+);
+
+export default function Page() {
+  return (
+    <>
+      {/* Set asset path before Excalidraw loads */}
+      <Script id="load-env-variables" strategy="beforeInteractive">
+        {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
+      </Script>
+      
+      <ExcalidrawWithClientOnly />
+    </>
+  );
+}
+```
+
+### Step 3: Create Layout
+
+```tsx src/app/layout.tsx
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### Add Global Styles
+
+Create `src/app/globals.css`:
+
+```css src/app/globals.css
+* {
+  box-sizing: border-box;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100vh;
+  width: 100vw;
+}
+```
+
+## Pages Router Integration
+
+For the traditional Pages Router, use a similar approach:
+
+### Step 1: Create Wrapper Component
+
+```tsx src/excalidrawWrapper.tsx
+import * as excalidrawLib from "@excalidraw/excalidraw";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+const ExcalidrawWrapper: React.FC = () => {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+};
+
+export default ExcalidrawWrapper;
+```
+
+### Step 2: Create Page with Dynamic Import
+
+```tsx src/pages/index.tsx
+import dynamic from "next/dynamic";
+import Head from "next/head";
+
+const Excalidraw = dynamic(
+  async () => (await import("../excalidrawWrapper")).default,
+  {
+    ssr: false,
+  }
+);
+
+export default function Page() {
+  return (
+    <>
+      <Head>
+        <title>Excalidraw in Next.js</title>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.EXCALIDRAW_ASSET_PATH = window.origin;`,
+          }}
+        />
+      </Head>
+      <Excalidraw />
+    </>
+  );
+}
+```
+
+## Advanced Integration with Custom Features
+
+Create a full-featured integration with custom UI and functionality:
+
+<CodeGroup>
+
+```tsx excalidrawWrapper.tsx
+"use client";
+
+import { useState, useCallback } from "react";
+import * as excalidrawLib from "@excalidraw/excalidraw";
+import { 
+  Excalidraw,
+  MainMenu,
+  WelcomeScreen,
+  Footer,
+  type ExcalidrawImperativeAPI 
+} from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+const ExcalidrawWrapper: React.FC = () => {
+  const [excalidrawAPI, setExcalidrawAPI] = 
+    useState<ExcalidrawImperativeAPI | null>(null);
+  const [viewModeEnabled, setViewModeEnabled] = useState(false);
+  const [zenModeEnabled, setZenModeEnabled] = useState(false);
+  const [gridModeEnabled, setGridModeEnabled] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  const updateScene = useCallback(() => {
+    if (!excalidrawAPI) return;
+
+    const sceneData = {
+      elements: excalidrawLib.restoreElements(
+        excalidrawLib.convertToExcalidrawElements([
+          {
+            type: "rectangle",
+            id: "rect-1",
+            x: 100,
+            y: 100,
+            strokeColor: "#c92a2a",
+            width: 186,
+            height: 141,
+          },
+          {
+            type: "text",
+            x: 300,
+            y: 100,
+            text: "Hello from Next.js!",
+          },
+        ]),
+        null
+      ),
+      appState: {
+        viewBackgroundColor: "#edf2ff",
+      },
+    };
+
+    excalidrawAPI.updateScene(sceneData);
+  }, [excalidrawAPI]);
+
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "10px", borderBottom: "1px solid #ccc" }}>
+        <button onClick={updateScene}>Load Demo Scene</button>
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={viewModeEnabled}
+            onChange={() => setViewModeEnabled(!viewModeEnabled)}
+          />
+          View Mode
+        </label>
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={zenModeEnabled}
+            onChange={() => setZenModeEnabled(!zenModeEnabled)}
+          />
+          Zen Mode
+        </label>
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={gridModeEnabled}
+            onChange={() => setGridModeEnabled(!gridModeEnabled)}
+          />
+          Grid Mode
+        </label>
+        <label style={{ marginLeft: "10px" }}>
+          <input
+            type="checkbox"
+            checked={theme === "dark"}
+            onChange={() => setTheme(theme === "light" ? "dark" : "light")}
+          />
+          Dark Theme
+        </label>
+      </div>
+      <div style={{ flex: 1 }}>
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          viewModeEnabled={viewModeEnabled}
+          zenModeEnabled={zenModeEnabled}
+          gridModeEnabled={gridModeEnabled}
+          theme={theme}
+        >
+          <WelcomeScreen />
+          <MainMenu>
+            <MainMenu.DefaultItems.SaveAsImage />
+            <MainMenu.DefaultItems.Export />
+            <MainMenu.Separator />
+            <MainMenu.DefaultItems.Help />
+          </MainMenu>
+          <Footer>
+            <div style={{ padding: "5px", fontSize: "12px" }}>
+              Powered by Excalidraw × Next.js
+            </div>
+          </Footer>
+        </Excalidraw>
+      </div>
+    </div>
+  );
+};
+
+export default ExcalidrawWrapper;
+```
+
+```tsx page.tsx (App Router)
+import dynamic from "next/dynamic";
+import Script from "next/script";
+
+const ExcalidrawWithClientOnly = dynamic(
+  async () => (await import("../excalidrawWrapper")).default,
+  {
+    ssr: false,
+  }
+);
+
+export default function Page() {
+  return (
+    <>
+      <Script id="load-env-variables" strategy="beforeInteractive">
+        {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
+      </Script>
+      <ExcalidrawWithClientOnly />
+    </>
+  );
+}
+```
+
+```tsx index.tsx (Pages Router)
+import dynamic from "next/dynamic";
+import Head from "next/head";
+
+const Excalidraw = dynamic(
+  async () => (await import("../excalidrawWrapper")).default,
+  {
+    ssr: false,
+  }
+);
+
+export default function Page() {
+  return (
+    <>
+      <Head>
+        <title>Excalidraw Next.js Example</title>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.EXCALIDRAW_ASSET_PATH = window.origin;`,
+          }}
+        />
+      </Head>
+      <Excalidraw />
+    </>
+  );
+}
+```
+
+</CodeGroup>
+
+## Loading State
+
+Add a loading indicator while Excalidraw loads:
+
+```tsx
+import dynamic from "next/dynamic";
+import Script from "next/script";
+
+const ExcalidrawWithClientOnly = dynamic(
+  async () => (await import("../excalidrawWrapper")).default,
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div>Loading Excalidraw...</div>
+      </div>
+    ),
+  }
+);
+
+export default function Page() {
+  return (
+    <>
+      <Script id="load-env-variables" strategy="beforeInteractive">
+        {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
+      </Script>
+      <ExcalidrawWithClientOnly />
+    </>
+  );
+}
+```
+
+## TypeScript Configuration
+
+Ensure your `tsconfig.json` is properly configured:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+## Polyfills for Server-Side
+
+If you encounter canvas-related errors during build, add polyfills:
+
+```bash
+npm install path2d-polyfill
+```
+
+Then in your wrapper:
+
+```tsx
+"use client";
+
+import "path2d-polyfill";
+import { Excalidraw } from "@excalidraw/excalidraw";
+// ... rest of your code
+```
+
+## Deployment
+
+<Steps>
+  <Step title="Build your application">
+    ```bash
+    npm run build
+    ```
+  </Step>
+
+  <Step title="Test production build locally">
+    ```bash
+    npm run start
+    ```
+  </Step>
+
+  <Step title="Deploy to Vercel">
+    The easiest way to deploy is using [Vercel](https://vercel.com):
+
+    ```bash
+    npm install -g vercel
+    vercel
+    ```
+  </Step>
+</Steps>
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="ReferenceError: window is not defined">
+    This occurs when SSR tries to access browser APIs. Make sure:
+    - You're using `dynamic` import with `ssr: false`
+    - The `"use client"` directive is at the top of your wrapper
+    - Asset path is set using `next/script` with `beforeInteractive` strategy
+  </Accordion>
+
+  <Accordion title="Fonts not loading">
+    Ensure:
+    - Fonts are copied to the public directory
+    - `EXCALIDRAW_ASSET_PATH` is set correctly
+    - Your build script includes the copy:assets step
+  </Accordion>
+
+  <Accordion title="TypeScript errors during build">
+    If you see TypeScript errors related to JSX:
+    - Check your `tsconfig.json` has `"jsx": "preserve"`
+    - Ensure all imports are correctly typed
+    - Consider adding `// @ts-expect-error` for known Next.js issues
+  </Accordion>
+
+  <Accordion title="Canvas rendering issues">
+    Install and import the path2d-polyfill:
+    ```bash
+    npm install path2d-polyfill
+    ```
+    Then import it in your wrapper component.
+  </Accordion>
+</AccordionGroup>
+
+## Live Example
+
+View the complete working example:
+- [GitHub Repository](https://github.com/excalidraw/excalidraw/tree/master/examples/with-nextjs)
+- [Live Demo on Vercel](https://excalidraw-nextjs-example.vercel.app)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="React Integration" icon="react" href="/examples/react-integration">
+    Learn about general React integration patterns
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Vanilla JS" icon="js" href="/examples/vanilla-js">
+    See how to use Excalidraw without a framework
+  </Card>
+  <Card title="Examples" icon="flask" href="/examples">
+    Browse more integration examples
+  </Card>
+</CardGroup>

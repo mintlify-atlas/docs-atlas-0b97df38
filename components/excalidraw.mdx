@@ -1,0 +1,523 @@
+---
+title: "Excalidraw Component"
+description: "Main Excalidraw React component for embedding a fully-featured whiteboard editor"
+---
+
+# Excalidraw Component
+
+The `Excalidraw` component is the main React component that renders the complete Excalidraw editor. It provides a fully-featured, customizable whiteboard experience that can be embedded in any React application.
+
+## Basic Usage
+
+<CodeGroup>
+```jsx Basic Example
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+```
+
+```jsx With Initial Data
+import { Excalidraw } from "@excalidraw/excalidraw";
+
+function App() {
+  const initialData = {
+    elements: [],
+    appState: {
+      viewBackgroundColor: "#ffffff",
+    },
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw initialData={initialData} />
+    </div>
+  );
+}
+```
+
+```jsx With Custom UI
+import { Excalidraw, MainMenu, WelcomeScreen } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            <WelcomeScreen.Center.Heading>
+              Welcome to my custom app!
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Props
+
+### Core Props
+
+<ParamField path="onChange" type="function">
+  Callback fired when elements, appState, or files change.
+  
+  ```typescript
+  onChange?: (
+    elements: readonly ExcalidrawElement[],
+    appState: AppState,
+    files: BinaryFiles,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="initialData" type="object | function">
+  Initial scene data to load. Can be an object or a function that returns initial data (sync or async).
+  
+  ```typescript
+  initialData?: 
+    | ExcalidrawInitialDataState 
+    | (() => Promise<ExcalidrawInitialDataState | null>)
+    | Promise<ExcalidrawInitialDataState | null>;
+  ```
+</ParamField>
+
+<ParamField path="excalidrawAPI" type="function">
+  Callback to receive the Excalidraw API instance for imperative actions.
+  
+  ```typescript
+  excalidrawAPI?: (api: ExcalidrawImperativeAPI) => void;
+  ```
+</ParamField>
+
+### Appearance Props
+
+<ParamField path="theme" type="'light' | 'dark'">
+  Sets the editor theme. When not provided, users can toggle between themes.
+</ParamField>
+
+<ParamField path="viewModeEnabled" type="boolean" default="false">
+  When true, renders the editor in view-only mode with no editing capabilities.
+</ParamField>
+
+<ParamField path="zenModeEnabled" type="boolean" default="false">
+  When true, hides the UI chrome for a distraction-free experience.
+</ParamField>
+
+<ParamField path="gridModeEnabled" type="boolean" default="false">
+  When true, shows a grid on the canvas.
+</ParamField>
+
+<ParamField path="name" type="string">
+  Name of the document/scene, used as the default filename when exporting.
+</ParamField>
+
+### Behavior Props
+
+<ParamField path="autoFocus" type="boolean" default="false">
+  When true, automatically focuses the canvas on mount.
+</ParamField>
+
+<ParamField path="detectScroll" type="boolean" default="true">
+  When true, detects scrolling outside the canvas to prevent accidental scrolls.
+</ParamField>
+
+<ParamField path="handleKeyboardGlobally" type="boolean" default="false">
+  When true, keyboard shortcuts work globally instead of only when canvas is focused.
+</ParamField>
+
+<ParamField path="renderScrollbars" type="boolean">
+  Controls whether to render scrollbars on the canvas.
+</ParamField>
+
+### Collaboration Props
+
+<ParamField path="isCollaborating" type="boolean" default="false">
+  Indicates whether the editor is in collaboration mode.
+</ParamField>
+
+<ParamField path="onPointerUpdate" type="function">
+  Callback fired when the user's pointer position changes, useful for real-time collaboration.
+  
+  ```typescript
+  onPointerUpdate?: (payload: {
+    pointer: { x: number; y: number; tool: "pointer" | "laser" };
+    button: "down" | "up";
+    pointersMap: Map<number, Gesture["pointers"]>;
+  }) => void;
+  ```
+</ParamField>
+
+### Event Callbacks
+
+<ParamField path="onIncrement" type="function">
+  Called on every state increment (ephemeral or durable).
+  
+  ```typescript
+  onIncrement?: (event: DurableIncrement | EphemeralIncrement) => void;
+  ```
+</ParamField>
+
+<ParamField path="onPaste" type="function">
+  Called when paste is triggered. Return true to prevent default paste behavior.
+  
+  ```typescript
+  onPaste?: (
+    data: ClipboardData,
+    event: ClipboardEvent | null,
+  ) => Promise<boolean> | boolean;
+  ```
+</ParamField>
+
+<ParamField path="onDuplicate" type="function">
+  Called when elements are duplicated. Return modified elements or void.
+  
+  ```typescript
+  onDuplicate?: (
+    nextElements: readonly ExcalidrawElement[],
+    prevElements: readonly ExcalidrawElement[],
+  ) => ExcalidrawElement[] | void;
+  ```
+</ParamField>
+
+<ParamField path="onPointerDown" type="function">
+  Called on pointer down events.
+  
+  ```typescript
+  onPointerDown?: (
+    activeTool: AppState["activeTool"],
+    pointerDownState: PointerDownState,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="onPointerUp" type="function">
+  Called on pointer up events.
+  
+  ```typescript
+  onPointerUp?: (
+    activeTool: AppState["activeTool"],
+    pointerDownState: PointerDownState,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="onScrollChange" type="function">
+  Called when the canvas scroll position or zoom changes.
+  
+  ```typescript
+  onScrollChange?: (scrollX: number, scrollY: number, zoom: Zoom) => void;
+  ```
+</ParamField>
+
+<ParamField path="onUserFollow" type="function">
+  Called when following a collaborator.
+  
+  ```typescript
+  onUserFollow?: (payload: OnUserFollowedPayload) => void;
+  ```
+</ParamField>
+
+### Library & File Management
+
+<ParamField path="onLibraryChange" type="function">
+  Called when the library items change.
+  
+  ```typescript
+  onLibraryChange?: (libraryItems: LibraryItems) => void | Promise<any>;
+  ```
+</ParamField>
+
+<ParamField path="generateIdForFile" type="function">
+  Custom function to generate IDs for uploaded files.
+  
+  ```typescript
+  generateIdForFile?: (file: File) => string | Promise<string>;
+  ```
+</ParamField>
+
+<ParamField path="libraryReturnUrl" type="string">
+  URL to return to after opening the public library.
+</ParamField>
+
+### Link Handling
+
+<ParamField path="onLinkOpen" type="function">
+  Called when a link is clicked.
+  
+  ```typescript
+  onLinkOpen?: (
+    element: NonDeletedExcalidrawElement,
+    event: CustomEvent<{ nativeEvent: MouseEvent | React.PointerEvent }>,
+  ) => void;
+  ```
+</ParamField>
+
+<ParamField path="generateLinkForSelection" type="function">
+  Generate a custom link for selected element(s).
+  
+  ```typescript
+  generateLinkForSelection?: (id: string, type: "element" | "group") => string;
+  ```
+</ParamField>
+
+### Embedding
+
+<ParamField path="validateEmbeddable" type="boolean | string[] | RegExp | RegExp[] | function">
+  Controls which URLs can be embedded. Can be a boolean, array of allowed domains, regex pattern(s), or validation function.
+  
+  ```typescript
+  validateEmbeddable?: 
+    | boolean 
+    | string[] 
+    | RegExp 
+    | RegExp[] 
+    | ((link: string) => boolean | undefined);
+  ```
+</ParamField>
+
+<ParamField path="renderEmbeddable" type="function">
+  Custom renderer for embeddable elements.
+  
+  ```typescript
+  renderEmbeddable?: (
+    element: NonDeleted<ExcalidrawEmbeddableElement>,
+    appState: AppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+### Custom UI Rendering
+
+<ParamField path="renderTopLeftUI" type="function">
+  Render custom UI in the top-left corner.
+  
+  ```typescript
+  renderTopLeftUI?: (
+    isMobile: boolean,
+    appState: UIAppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+<ParamField path="renderTopRightUI" type="function">
+  Render custom UI in the top-right corner.
+  
+  ```typescript
+  renderTopRightUI?: (
+    isMobile: boolean,
+    appState: UIAppState,
+  ) => JSX.Element | null;
+  ```
+</ParamField>
+
+<ParamField path="renderCustomStats" type="function">
+  Render custom statistics panel content.
+  
+  ```typescript
+  renderCustomStats?: (
+    elements: readonly NonDeletedExcalidrawElement[],
+    appState: UIAppState,
+  ) => JSX.Element;
+  ```
+</ParamField>
+
+### UI Configuration
+
+<ParamField path="UIOptions" type="object">
+  Configure which UI elements are displayed and their behavior.
+  
+  ```typescript
+  UIOptions?: {
+    dockedSidebarBreakpoint?: number;
+    canvasActions?: {
+      changeViewBackgroundColor?: boolean;
+      clearCanvas?: boolean;
+      export?: false | ExportOpts;
+      loadScene?: boolean;
+      saveToActiveFile?: boolean;
+      toggleTheme?: boolean | null;
+      saveAsImage?: boolean;
+    };
+    tools?: {
+      image?: boolean;
+    };
+    getFormFactor?: (
+      editorWidth: number,
+      editorHeight: number,
+    ) => "desktop" | "tablet" | "phone";
+  };
+  ```
+</ParamField>
+
+### Advanced Props
+
+<ParamField path="langCode" type="string" default="en">
+  Language code for internationalization. Supported languages include en, es, fr, de, pt, ru, zh, ja, and more.
+</ParamField>
+
+<ParamField path="aiEnabled" type="boolean" default="true">
+  When false, disables AI features like text-to-diagram.
+</ParamField>
+
+<ParamField path="showDeprecatedFonts" type="boolean">
+  When true, shows deprecated font options.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode">
+  Custom components to render inside Excalidraw, such as MainMenu, WelcomeScreen, Footer, or Sidebar.
+</ParamField>
+
+## Excalidraw API
+
+The imperative API is provided via the `excalidrawAPI` prop callback:
+
+```jsx
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  return (
+    <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+  );
+}
+```
+
+### API Methods
+
+- `updateScene(sceneData)` - Update elements and app state
+- `resetScene(opts)` - Clear the canvas and reset state
+- `getSceneElements()` - Get current non-deleted elements
+- `getSceneElementsIncludingDeleted()` - Get all elements
+- `getAppState()` - Get current app state
+- `getFiles()` - Get binary files
+- `refresh()` - Force re-render
+- `setToast(message)` - Show toast notification
+- `setActiveTool(tool)` - Change active tool
+- `setCursor(cursor)` - Set custom cursor
+- `resetCursor()` - Reset to default cursor
+- `toggleSidebar(name)` - Toggle sidebar visibility
+- `scrollToContent(elements, opts)` - Scroll to view specific elements
+- `addFiles(files)` - Add binary files
+- `updateLibrary(libraryItems)` - Update library items
+
+### API Event Listeners
+
+- `onChange(callback)` - Listen to changes (elements, appState, files)
+- `onIncrement(callback)` - Listen to state increments
+- `onPointerDown(callback)` - Listen to pointer down events
+- `onPointerUp(callback)` - Listen to pointer up events
+- `onScrollChange(callback)` - Listen to scroll/zoom changes
+- `onUserFollow(callback)` - Listen to user follow events
+
+## Complete Example
+
+<CodeGroup>
+```jsx Full Featured App
+import { useState } from "react";
+import {
+  Excalidraw,
+  MainMenu,
+  WelcomeScreen,
+  Footer,
+} from "@excalidraw/excalidraw";
+
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const handleChange = (elements, appState, files) => {
+    console.log("Scene changed:", { elements, appState, files });
+  };
+
+  const initialData = {
+    elements: [
+      {
+        type: "rectangle",
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 100,
+        fillStyle: "hachure",
+        strokeColor: "#000000",
+        backgroundColor: "#ced4da",
+      },
+    ],
+    appState: {
+      viewBackgroundColor: "#ffffff",
+      gridSize: null,
+    },
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        onChange={handleChange}
+        initialData={initialData}
+        theme="light"
+        name="My Drawing"
+        UIOptions={{
+          canvasActions: {
+            changeViewBackgroundColor: true,
+            clearCanvas: true,
+            export: { saveFileToDisk: true },
+            loadScene: true,
+            saveToActiveFile: false,
+            toggleTheme: true,
+          },
+        }}
+      >
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.DefaultItems.ClearCanvas />
+          <MainMenu.Separator />
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+        
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            <WelcomeScreen.Center.Heading>
+              Start creating amazing diagrams!
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+
+export default App;
+```
+</CodeGroup>
+
+## See Also
+
+- [MainMenu](/components/main-menu) - Customize the main menu
+- [Sidebar](/components/sidebar) - Add custom sidebars
+- [WelcomeScreen](/components/welcome-screen) - Customize the welcome screen
+- [Footer](/components/footer) - Customize the footer
+- [Button](/components/buttons) - Use Excalidraw button components

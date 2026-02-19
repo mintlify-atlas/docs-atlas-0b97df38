@@ -1,0 +1,472 @@
+---
+title: "Export Utilities"
+description: "Functions for exporting Excalidraw scenes to various formats"
+---
+
+# Export Utilities
+
+Utilities for exporting Excalidraw scenes and elements to canvas, blob, SVG, and clipboard formats.
+
+## Canvas Export
+
+### exportToCanvas
+
+Exports elements to an HTML canvas element.
+
+```typescript
+function exportToCanvas(options: {
+  elements: readonly NonDeleted<ExcalidrawElement>[];
+  appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
+  files: BinaryFiles | null;
+  maxWidthOrHeight?: number;
+  exportPadding?: number;
+  exportingFrame?: ExcalidrawFrameLikeElement | null;
+  getDimensions?: (
+    width: number,
+    height: number
+  ) => { width: number; height: number; scale?: number };
+}): Promise<HTMLCanvasElement>
+```
+
+<ParamField path="elements" type="ExcalidrawElement[]" required>
+  Array of non-deleted elements to export
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState>">
+  Application state for export settings (background color, export scale, etc.)
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles | null" required>
+  Binary files map for image elements
+</ParamField>
+
+<ParamField path="maxWidthOrHeight" type="number">
+  Maximum dimension (width or height) for the exported canvas. The canvas will be scaled down to fit.
+</ParamField>
+
+<ParamField path="exportPadding" type="number">
+  Padding around the exported content in pixels
+</ParamField>
+
+<ParamField path="exportingFrame" type="ExcalidrawFrameLikeElement | null">
+  Specific frame to export (exports only elements within the frame)
+</ParamField>
+
+<ParamField path="getDimensions" type="function">
+  Custom function to calculate canvas dimensions. Receives natural width and height, returns target dimensions and optional scale.
+</ParamField>
+
+<ResponseField name="canvas" type="HTMLCanvasElement">
+  The rendered canvas element with the exported content
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { exportToCanvas } from "@excalidraw/excalidraw";
+
+const canvas = await exportToCanvas({
+  elements: excalidrawAPI.getSceneElements(),
+  appState: {
+    exportBackground: true,
+    exportScale: 2,
+    viewBackgroundColor: "#ffffff",
+  },
+  files: excalidrawAPI.getFiles(),
+  maxWidthOrHeight: 1920,
+  exportPadding: 10,
+});
+
+document.body.appendChild(canvas);
+```
+
+## Blob Export
+
+### exportToBlob
+
+Exports elements to a blob (PNG, JPEG, or SVG).
+
+```typescript
+function exportToBlob(options: {
+  elements: readonly NonDeleted<ExcalidrawElement>[];
+  appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
+  files: BinaryFiles | null;
+  mimeType?: string;
+  quality?: number;
+  exportPadding?: number;
+  maxWidthOrHeight?: number;
+  exportingFrame?: ExcalidrawFrameLikeElement | null;
+  getDimensions?: (
+    width: number,
+    height: number
+  ) => { width: number; height: number; scale?: number };
+}): Promise<Blob>
+```
+
+<ParamField path="elements" type="ExcalidrawElement[]" required>
+  Array of non-deleted elements to export
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState>">
+  Application state for export settings
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles | null" required>
+  Binary files map for image elements
+</ParamField>
+
+<ParamField path="mimeType" type="string" default="'image/png'">
+  Output format: "image/png", "image/jpeg", or "image/svg+xml"
+</ParamField>
+
+<ParamField path="quality" type="number">
+  Quality for JPEG export (0-1). Default is 0.92 for JPEG, 0.8 for PNG.
+</ParamField>
+
+<ParamField path="exportPadding" type="number">
+  Padding around the exported content in pixels
+</ParamField>
+
+<ParamField path="maxWidthOrHeight" type="number">
+  Maximum dimension for the exported image
+</ParamField>
+
+<ParamField path="exportingFrame" type="ExcalidrawFrameLikeElement | null">
+  Specific frame to export
+</ParamField>
+
+<ResponseField name="blob" type="Blob">
+  The exported content as a Blob
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { exportToBlob, MIME_TYPES } from "@excalidraw/excalidraw";
+
+const blob = await exportToBlob({
+  elements: excalidrawAPI.getSceneElements(),
+  appState: {
+    exportBackground: true,
+    exportWithDarkMode: false,
+    exportEmbedScene: true,
+  },
+  files: excalidrawAPI.getFiles(),
+  mimeType: MIME_TYPES.png,
+});
+
+// Download the blob
+const url = URL.createObjectURL(blob);
+const link = document.createElement("a");
+link.href = url;
+link.download = "excalidraw-export.png";
+link.click();
+URL.revokeObjectURL(url);
+```
+
+### MIME_TYPES
+
+Available MIME types for export.
+
+```typescript
+const MIME_TYPES = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  svg: "image/svg+xml",
+  excalidraw: "application/vnd.excalidraw+json",
+  excalidrawlib: "application/vnd.excalidrawlib+json",
+};
+```
+
+**Example:**
+
+```typescript
+import { MIME_TYPES } from "@excalidraw/excalidraw";
+
+// Export as JPEG with custom quality
+const jpegBlob = await exportToBlob({
+  elements,
+  appState: { exportBackground: true },
+  files,
+  mimeType: MIME_TYPES.jpg,
+  quality: 0.95,
+});
+```
+
+## SVG Export
+
+### exportToSvg
+
+Exports elements to an SVG element.
+
+```typescript
+function exportToSvg(options: {
+  elements: readonly NonDeleted<ExcalidrawElement>[];
+  appState?: Partial<AppState>;
+  files?: BinaryFiles;
+  exportPadding?: number;
+  renderEmbeddables?: boolean;
+  exportingFrame?: ExcalidrawFrameLikeElement | null;
+  skipInliningFonts?: true;
+  reuseImages?: boolean;
+}): Promise<SVGSVGElement>
+```
+
+<ParamField path="elements" type="ExcalidrawElement[]" required>
+  Array of non-deleted elements to export
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState>">
+  Application state for export settings
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles">
+  Binary files map for image elements
+</ParamField>
+
+<ParamField path="exportPadding" type="number">
+  Padding around the exported content in pixels
+</ParamField>
+
+<ParamField path="renderEmbeddables" type="boolean">
+  Whether to render embeddable elements (iframes, etc.)
+</ParamField>
+
+<ParamField path="exportingFrame" type="ExcalidrawFrameLikeElement | null">
+  Specific frame to export
+</ParamField>
+
+<ParamField path="skipInliningFonts" type="boolean">
+  Skip inlining fonts (fonts must be available on the target system)
+</ParamField>
+
+<ParamField path="reuseImages" type="boolean">
+  Reuse image references instead of embedding them
+</ParamField>
+
+<ResponseField name="svg" type="SVGSVGElement">
+  The exported SVG element
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { exportToSvg } from "@excalidraw/excalidraw";
+
+const svg = await exportToSvg({
+  elements: excalidrawAPI.getSceneElements(),
+  appState: {
+    exportBackground: true,
+    viewBackgroundColor: "#ffffff",
+    exportWithDarkMode: false,
+  },
+  files: excalidrawAPI.getFiles(),
+  exportPadding: 10,
+});
+
+// Get SVG as string
+const svgString = svg.outerHTML;
+
+// Or download it
+const blob = new Blob([svgString], { type: "image/svg+xml" });
+const url = URL.createObjectURL(blob);
+const link = document.createElement("a");
+link.href = url;
+link.download = "drawing.svg";
+link.click();
+URL.revokeObjectURL(url);
+```
+
+## Clipboard Export
+
+### exportToClipboard
+
+Exports content to the system clipboard.
+
+```typescript
+function exportToClipboard(options: {
+  elements: readonly NonDeleted<ExcalidrawElement>[];
+  appState?: Partial<Omit<AppState, "offsetTop" | "offsetLeft">>;
+  files: BinaryFiles | null;
+  type: "png" | "svg" | "json";
+  mimeType?: string;
+  quality?: number;
+}): Promise<void>
+```
+
+<ParamField path="elements" type="ExcalidrawElement[]" required>
+  Array of non-deleted elements to export
+</ParamField>
+
+<ParamField path="appState" type="Partial<AppState>">
+  Application state for export settings
+</ParamField>
+
+<ParamField path="files" type="BinaryFiles | null" required>
+  Binary files map for image elements
+</ParamField>
+
+<ParamField path="type" type="'png' | 'svg' | 'json'" required>
+  Export format for clipboard
+</ParamField>
+
+<ParamField path="mimeType" type="string">
+  MIME type (used for PNG export)
+</ParamField>
+
+<ParamField path="quality" type="number">
+  Quality for PNG export (0-1)
+</ParamField>
+
+<ResponseField name="void" type="Promise<void>">
+  Promise that resolves when content is copied to clipboard
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { exportToClipboard } from "@excalidraw/excalidraw";
+
+// Copy as PNG image
+await exportToClipboard({
+  elements: excalidrawAPI.getSceneElements(),
+  files: excalidrawAPI.getFiles(),
+  type: "png",
+  appState: {
+    exportBackground: true,
+  },
+});
+
+// Copy as SVG
+await exportToClipboard({
+  elements: excalidrawAPI.getSceneElements(),
+  files: excalidrawAPI.getFiles(),
+  type: "svg",
+});
+
+// Copy as JSON (for pasting back into Excalidraw)
+await exportToClipboard({
+  elements: excalidrawAPI.getSceneElements(),
+  files: excalidrawAPI.getFiles(),
+  type: "json",
+});
+```
+
+## Export Options Reference
+
+### AppState Export Properties
+
+Common `appState` properties used in export functions:
+
+```typescript
+{
+  exportBackground: boolean;        // Include background color
+  exportScale: number;              // Scale factor (1 = 100%)
+  exportWithDarkMode: boolean;      // Use dark mode colors
+  exportEmbedScene: boolean;        // Embed scene data in PNG
+  viewBackgroundColor: string;      // Background color
+  shouldAddWatermark: boolean;      // Add Excalidraw watermark
+}
+```
+
+**Example:**
+
+```typescript
+const appState = {
+  exportBackground: true,
+  exportScale: 2, // 2x resolution
+  exportWithDarkMode: false,
+  exportEmbedScene: true, // Embed editable data in PNG
+  viewBackgroundColor: "#ffffff",
+};
+
+const blob = await exportToBlob({
+  elements,
+  appState,
+  files,
+  mimeType: "image/png",
+});
+```
+
+## Complete Export Example
+
+Here's a complete example with export to multiple formats:
+
+```typescript
+import {
+  exportToCanvas,
+  exportToBlob,
+  exportToSvg,
+  exportToClipboard,
+  MIME_TYPES,
+} from "@excalidraw/excalidraw";
+
+const ExportComponent = ({ excalidrawAPI }) => {
+  const exportOptions = {
+    elements: excalidrawAPI.getSceneElements(),
+    files: excalidrawAPI.getFiles(),
+    appState: {
+      exportBackground: true,
+      exportScale: 2,
+      viewBackgroundColor: "#ffffff",
+    },
+  };
+
+  // Export to PNG
+  const exportPNG = async () => {
+    const blob = await exportToBlob({
+      ...exportOptions,
+      mimeType: MIME_TYPES.png,
+    });
+    downloadBlob(blob, "drawing.png");
+  };
+
+  // Export to SVG
+  const exportSVG = async () => {
+    const svg = await exportToSvg(exportOptions);
+    const blob = new Blob([svg.outerHTML], { type: MIME_TYPES.svg });
+    downloadBlob(blob, "drawing.svg");
+  };
+
+  // Export to clipboard
+  const copyToClipboard = async () => {
+    await exportToClipboard({
+      ...exportOptions,
+      type: "png",
+    });
+    alert("Copied to clipboard!");
+  };
+
+  // Get canvas for preview
+  const getPreview = async () => {
+    const canvas = await exportToCanvas({
+      ...exportOptions,
+      maxWidthOrHeight: 800,
+    });
+    return canvas;
+  };
+
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      <button onClick={exportPNG}>Export PNG</button>
+      <button onClick={exportSVG}>Export SVG</button>
+      <button onClick={copyToClipboard}>Copy to Clipboard</button>
+    </div>
+  );
+};
+```
+
+## See Also
+
+- [Element Utils](/api/element-utils) - Creating and manipulating elements
+- [Scene Utils](/api/scene-utils) - Scene management
+- [Restore Utils](/api/restore-utils) - Loading and restoring data

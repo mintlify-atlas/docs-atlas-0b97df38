@@ -1,0 +1,591 @@
+---
+title: "Button Components"
+description: "Reusable button components following Excalidraw's design system"
+---
+
+# Button Components
+
+Excalidraw provides several button components that follow the editor's design system. These components ensure visual consistency and provide common button patterns used throughout the editor.
+
+## Button
+
+The main `Button` component is a generic button that accepts all standard HTML button props and adds Excalidraw styling.
+
+### Basic Usage
+
+<CodeGroup>
+```jsx Simple Button
+import { Button } from "@excalidraw/excalidraw";
+
+function MyComponent() {
+  const handleClick = () => {
+    console.log("Button clicked");
+  };
+
+  return (
+    <Button onSelect={handleClick}>
+      Click Me
+    </Button>
+  );
+}
+```
+
+```jsx Button with Selected State
+import { Button } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function MyComponent() {
+  const [isActive, setIsActive] = useState(false);
+
+  return (
+    <Button 
+      onSelect={() => setIsActive(!isActive)}
+      selected={isActive}
+    >
+      {isActive ? "Active" : "Inactive"}
+    </Button>
+  );
+}
+```
+
+```jsx Custom Styled Button
+import { Button } from "@excalidraw/excalidraw";
+
+function MyComponent() {
+  return (
+    <Button 
+      onSelect={() => console.log("Clicked")}
+      className="my-custom-button"
+      style={{ 
+        backgroundColor: "#6965db",
+        color: "white" 
+      }}
+    >
+      Custom Styled
+    </Button>
+  );
+}
+```
+</CodeGroup>
+
+### Props
+
+<ParamField path="onSelect" type="function" required>
+  Callback function executed when the button is clicked.
+  
+  ```typescript
+  onSelect: () => any;
+  ```
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Whether the button is in an active/selected state. Adds visual styling to indicate selection.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  The button content (text, icons, or other elements).
+</ParamField>
+
+<ParamField path="type" type="'button' | 'submit' | 'reset'" default="'button'">
+  The HTML button type attribute.
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class names to apply to the button.
+</ParamField>
+
+<ParamField path="...rest" type="HTMLButtonElement props">
+  All standard HTML button attributes are supported (disabled, title, aria-label, etc.).
+</ParamField>
+
+### Styling
+
+The Button component uses the `.excalidraw-button` CSS class:
+
+```css
+.excalidraw-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.excalidraw-button:hover {
+  background: #f9fafb;
+}
+
+.excalidraw-button.selected {
+  background: #e0e7ff;
+  border-color: #6965db;
+}
+
+.excalidraw-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+## ButtonIcon
+
+A specialized button component for icon-only buttons, commonly used in toolbars.
+
+### Basic Usage
+
+<CodeGroup>
+```jsx Icon Button
+import { ButtonIcon } from "@excalidraw/excalidraw";
+import { TrashIcon } from "./icons";
+
+function MyComponent() {
+  const handleDelete = (event) => {
+    console.log("Delete clicked");
+  };
+
+  return (
+    <ButtonIcon
+      icon={TrashIcon}
+      title="Delete"
+      onClick={handleDelete}
+    />
+  );
+}
+```
+
+```jsx Active Icon Button
+import { ButtonIcon } from "@excalidraw/excalidraw";
+import { LockIcon } from "./icons";
+import { useState } from "react";
+
+function MyComponent() {
+  const [isLocked, setIsLocked] = useState(false);
+
+  return (
+    <ButtonIcon
+      icon={LockIcon}
+      title={isLocked ? "Unlock" : "Lock"}
+      active={isLocked}
+      onClick={() => setIsLocked(!isLocked)}
+    />
+  );
+}
+```
+
+```jsx Standalone Icon Button
+import { ButtonIcon } from "@excalidraw/excalidraw";
+import { SettingsIcon } from "./icons";
+
+function MyComponent() {
+  return (
+    <ButtonIcon
+      icon={SettingsIcon}
+      title="Settings"
+      standalone
+      onClick={() => console.log("Settings")}
+      style={{ margin: "1rem" }}
+    />
+  );
+}
+```
+</CodeGroup>
+
+### Props
+
+<ParamField path="icon" type="JSX.Element" required>
+  The icon element to display in the button.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Tooltip text shown on hover (also used for accessibility).
+</ParamField>
+
+<ParamField path="onClick" type="function" required>
+  Callback function when the button is clicked.
+  
+  ```typescript
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  ```
+</ParamField>
+
+<ParamField path="active" type="boolean">
+  Whether the button is in an active state (e.g., tool currently selected).
+</ParamField>
+
+<ParamField path="standalone" type="boolean">
+  When true, applies standalone styling that may be better suited for isolated buttons outside of toolbars.
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class names to apply.
+</ParamField>
+
+<ParamField path="testId" type="string">
+  Test identifier for automated testing (sets `data-testid` attribute).
+</ParamField>
+
+<ParamField path="style" type="React.CSSProperties">
+  Inline styles to apply to the button.
+</ParamField>
+
+## Complete Examples
+
+<CodeGroup>
+```jsx Button Group
+import { Button } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function AlignmentButtons() {
+  const [alignment, setAlignment] = useState("left");
+
+  return (
+    <div style={{ display: "flex", gap: "0.5rem" }}>
+      <Button
+        onSelect={() => setAlignment("left")}
+        selected={alignment === "left"}
+      >
+        Left
+      </Button>
+      <Button
+        onSelect={() => setAlignment("center")}
+        selected={alignment === "center"}
+      >
+        Center
+      </Button>
+      <Button
+        onSelect={() => setAlignment("right")}
+        selected={alignment === "right"}
+      >
+        Right
+      </Button>
+    </div>
+  );
+}
+```
+
+```jsx Icon Toolbar
+import { ButtonIcon } from "@excalidraw/excalidraw";
+import { 
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  StrikethroughIcon
+} from "./icons";
+import { useState } from "react";
+
+function TextFormattingToolbar() {
+  const [formats, setFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+  });
+
+  const toggleFormat = (format) => {
+    setFormats((prev) => ({
+      ...prev,
+      [format]: !prev[format],
+    }));
+  };
+
+  return (
+    <div 
+      style={{ 
+        display: "flex", 
+        gap: "0.25rem",
+        padding: "0.5rem",
+        background: "#f9fafb",
+        borderRadius: "0.5rem"
+      }}
+    >
+      <ButtonIcon
+        icon={BoldIcon}
+        title="Bold (⌘B)"
+        active={formats.bold}
+        onClick={() => toggleFormat("bold")}
+      />
+      <ButtonIcon
+        icon={ItalicIcon}
+        title="Italic (⌘I)"
+        active={formats.italic}
+        onClick={() => toggleFormat("italic")}
+      />
+      <ButtonIcon
+        icon={UnderlineIcon}
+        title="Underline (⌘U)"
+        active={formats.underline}
+        onClick={() => toggleFormat("underline")}
+      />
+      <ButtonIcon
+        icon={StrikethroughIcon}
+        title="Strikethrough"
+        active={formats.strikethrough}
+        onClick={() => toggleFormat("strikethrough")}
+      />
+    </div>
+  );
+}
+```
+
+```jsx Action Buttons in Sidebar
+import { 
+  Excalidraw, 
+  Sidebar, 
+  Button 
+} from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  const templates = [
+    { id: 1, name: "Flowchart" },
+    { id: 2, name: "Wireframe" },
+    { id: 3, name: "Mind Map" },
+  ];
+
+  const applyTemplate = () => {
+    if (selectedTemplate) {
+      console.log("Applying template:", selectedTemplate);
+    }
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar name="templates">
+          <Sidebar.Header>Templates</Sidebar.Header>
+          <div style={{ padding: "1rem" }}>
+            <div style={{ marginBottom: "1rem" }}>
+              {templates.map((template) => (
+                <Button
+                  key={template.id}
+                  onSelect={() => setSelectedTemplate(template)}
+                  selected={selectedTemplate?.id === template.id}
+                  style={{ 
+                    width: "100%", 
+                    marginBottom: "0.5rem" 
+                  }}
+                >
+                  {template.name}
+                </Button>
+              ))}
+            </div>
+            <Button
+              onSelect={applyTemplate}
+              disabled={!selectedTemplate}
+              style={{ 
+                width: "100%",
+                backgroundColor: "#6965db",
+                color: "white",
+                border: "none"
+              }}
+            >
+              Apply Template
+            </Button>
+          </div>
+        </Sidebar>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Custom Icon Button Component
+import { ButtonIcon } from "@excalidraw/excalidraw";
+import { forwardRef } from "react";
+
+const IconButton = forwardRef((
+  { icon, label, isActive, onToggle, ...props }, 
+  ref
+) => {
+  return (
+    <div style={{ position: "relative" }}>
+      <ButtonIcon
+        ref={ref}
+        icon={icon}
+        title={label}
+        active={isActive}
+        onClick={onToggle}
+        {...props}
+      />
+      {isActive && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: -4,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "80%",
+            height: 2,
+            backgroundColor: "#6965db",
+            borderRadius: 1,
+          }}
+        />
+      )}
+    </div>
+  );
+});
+
+function MyToolbar() {
+  const [activeTool, setActiveTool] = useState("select");
+
+  return (
+    <div style={{ display: "flex", gap: "0.5rem" }}>
+      <IconButton
+        icon={SelectIcon}
+        label="Select (V)"
+        isActive={activeTool === "select"}
+        onToggle={() => setActiveTool("select")}
+      />
+      <IconButton
+        icon={RectangleIcon}
+        label="Rectangle (R)"
+        isActive={activeTool === "rectangle"}
+        onToggle={() => setActiveTool("rectangle")}
+      />
+      <IconButton
+        icon={CircleIcon}
+        label="Circle (O)"
+        isActive={activeTool === "circle"}
+        onToggle={() => setActiveTool("circle")}
+      />
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Accessibility
+
+Both button components follow accessibility best practices:
+
+### Button
+- Native `<button>` element for proper keyboard navigation
+- Accepts `aria-label` for screen readers
+- Responds to Enter and Space keys
+- `:focus` styles for keyboard users
+
+### ButtonIcon
+- Uses `title` prop for tooltip and `aria-label`
+- Icon-only buttons always have descriptive titles
+- Active state is communicated visually and semantically
+- Supports keyboard navigation
+
+### Best Practices
+
+```jsx
+{/* Good: Has descriptive title */}
+<ButtonIcon
+  icon={<TrashIcon />}
+  title="Delete selected elements"
+  onClick={handleDelete}
+/>
+
+{/* Good: Disabled state explained */}
+<Button 
+  onSelect={handleSave}
+  disabled={!hasChanges}
+  title={!hasChanges ? "No changes to save" : "Save changes"}
+>
+  Save
+</Button>
+
+{/* Good: ARIA label for complex actions */}
+<Button
+  onSelect={handleExport}
+  aria-label="Export drawing as PNG image"
+>
+  <DownloadIcon /> Export
+</Button>
+```
+
+## Styling Patterns
+
+### Primary Action Button
+
+```jsx
+<Button
+  onSelect={handleAction}
+  className="primary-button"
+  style={{
+    backgroundColor: "#6965db",
+    color: "white",
+    border: "none",
+    fontWeight: 500,
+  }}
+>
+  Primary Action
+</Button>
+```
+
+### Danger/Destructive Button
+
+```jsx
+<Button
+  onSelect={handleDelete}
+  className="danger-button"
+  style={{
+    backgroundColor: "#dc2626",
+    color: "white",
+    border: "none",
+  }}
+>
+  Delete
+</Button>
+```
+
+### Ghost Button (Minimal)
+
+```jsx
+<Button
+  onSelect={handleCancel}
+  className="ghost-button"
+  style={{
+    background: "transparent",
+    border: "none",
+    color: "#6b7280",
+  }}
+>
+  Cancel
+</Button>
+```
+
+### Icon Button with Badge
+
+```jsx
+<div style={{ position: "relative" }}>
+  <ButtonIcon
+    icon={NotificationIcon}
+    title="Notifications"
+    onClick={openNotifications}
+  />
+  {notificationCount > 0 && (
+    <span style={{
+      position: "absolute",
+      top: -4,
+      right: -4,
+      background: "#dc2626",
+      color: "white",
+      borderRadius: "50%",
+      width: 16,
+      height: 16,
+      fontSize: 10,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      {notificationCount}
+    </span>
+  )}
+</div>
+```
+
+## See Also
+
+- [Excalidraw](/components/excalidraw) - Main component documentation
+- [MainMenu](/components/main-menu) - Using buttons in menus
+- [Sidebar](/components/sidebar) - Using buttons in sidebars
+- [Footer](/components/footer) - Using buttons in footer

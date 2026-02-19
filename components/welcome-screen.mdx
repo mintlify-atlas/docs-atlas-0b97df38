@@ -1,0 +1,573 @@
+---
+title: "WelcomeScreen Component"
+description: "Customizable welcome screen for first-time users of the Excalidraw editor"
+---
+
+# WelcomeScreen Component
+
+The `WelcomeScreen` component displays helpful hints and a central menu when users first open the Excalidraw editor. It's designed to guide new users and can be fully customized to match your application's branding and onboarding flow.
+
+## Basic Usage
+
+<CodeGroup>
+```jsx Default Welcome Screen
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Center />
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Custom Welcome Screen
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            <WelcomeScreen.Center.Heading>
+              Welcome to My Whiteboard App!
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          <WelcomeScreen.Hints.MenuHint>
+            Click here to access menu options
+          </WelcomeScreen.Hints.MenuHint>
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Minimal Welcome Screen
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Heading>
+              Start Drawing
+            </WelcomeScreen.Center.Heading>
+          </WelcomeScreen.Center>
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Welcome Screen Structure
+
+The WelcomeScreen is composed of several subcomponents that can be used together or individually:
+
+```
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│         [MenuHint - Top Left Arrow]             │
+│                                                 │
+│    [ToolbarHint - Top Center Arrow]             │
+│                                                 │
+│              ┌──────────────┐                   │
+│              │   [Logo]     │                   │
+│              │   [Heading]  │                   │
+│              │   [Menu]     │  ← Center         │
+│              └──────────────┘                   │
+│                                                 │
+│                      [HelpHint - Bottom Right]  │
+└─────────────────────────────────────────────────┘
+```
+
+## Main Component
+
+<ParamField path="children" type="React.ReactNode">
+  The content to display in the welcome screen. Typically includes `WelcomeScreen.Center` and hint components. If not provided, renders the default welcome screen.
+</ParamField>
+
+## WelcomeScreen.Center
+
+The central panel containing the logo, heading, and menu.
+
+```jsx
+<WelcomeScreen.Center>
+  <WelcomeScreen.Center.Logo />
+  <WelcomeScreen.Center.Heading>
+    Welcome!
+  </WelcomeScreen.Center.Heading>
+  <WelcomeScreen.Center.Menu>
+    {/* Menu items */}
+  </WelcomeScreen.Center.Menu>
+</WelcomeScreen.Center>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Content for the center panel. If not provided, renders default logo, heading, and menu.
+</ParamField>
+
+### WelcomeScreen.Center.Logo
+
+Displays the Excalidraw logo or a custom logo.
+
+```jsx
+<WelcomeScreen.Center.Logo>
+  <img src="/my-logo.svg" alt="My App" />
+</WelcomeScreen.Center.Logo>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Custom logo content. If not provided, displays the Excalidraw logo.
+</ParamField>
+
+### WelcomeScreen.Center.Heading
+
+The main heading text.
+
+```jsx
+<WelcomeScreen.Center.Heading>
+  Welcome to My Whiteboard!
+</WelcomeScreen.Center.Heading>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  The heading text to display.
+</ParamField>
+
+### WelcomeScreen.Center.Menu
+
+Container for menu items.
+
+```jsx
+<WelcomeScreen.Center.Menu>
+  <WelcomeScreen.Center.MenuItemLoadScene />
+  <WelcomeScreen.Center.MenuItemHelp />
+</WelcomeScreen.Center.Menu>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Menu items to display. Can be built-in items or custom `MenuItem` components.
+</ParamField>
+
+### Built-in Menu Items
+
+#### WelcomeScreen.Center.MenuItemLoadScene
+
+Opens the file picker to load a scene.
+
+```jsx
+<WelcomeScreen.Center.MenuItemLoadScene />
+```
+
+<Note>
+This item is automatically hidden when `viewModeEnabled` is `true`.
+</Note>
+
+#### WelcomeScreen.Center.MenuItemHelp
+
+Opens the help dialog with keyboard shortcuts.
+
+```jsx
+<WelcomeScreen.Center.MenuItemHelp />
+```
+
+#### WelcomeScreen.Center.MenuItemLiveCollaborationTrigger
+
+Triggers live collaboration mode.
+
+```jsx
+<WelcomeScreen.Center.MenuItemLiveCollaborationTrigger
+  onSelect={() => {
+    console.log("Start collaboration");
+  }}
+/>
+```
+
+<ParamField path="onSelect" type="function" required>
+  Callback when the collaboration item is clicked.
+  
+  ```typescript
+  onSelect: () => any;
+  ```
+</ParamField>
+
+### Custom Menu Items
+
+#### WelcomeScreen.Center.MenuItem
+
+A clickable menu item.
+
+```jsx
+<WelcomeScreen.Center.MenuItem
+  onSelect={handleAction}
+  icon={<MyIcon />}
+  shortcut="⌘K"
+>
+  Custom Action
+</WelcomeScreen.Center.MenuItem>
+```
+
+**Props:**
+- `onSelect` (function, required) - Callback when clicked
+- `icon` (JSX.Element) - Icon to display
+- `shortcut` (string) - Keyboard shortcut to show
+- `children` (React.ReactNode) - Item label
+
+#### WelcomeScreen.Center.MenuItemLink
+
+A menu item that links to an external URL.
+
+```jsx
+<WelcomeScreen.Center.MenuItemLink
+  href="https://docs.example.com"
+  icon={<DocsIcon />}
+>
+  Documentation
+</WelcomeScreen.Center.MenuItemLink>
+```
+
+**Props:**
+- `href` (string, required) - URL to open
+- `icon` (JSX.Element) - Icon to display
+- `shortcut` (string) - Keyboard shortcut to show
+- `children` (React.ReactNode) - Link label
+
+## Welcome Screen Hints
+
+Visual hints that point to different parts of the UI.
+
+### WelcomeScreen.Hints.MenuHint
+
+Points to the main menu (hamburger icon) in the top-left corner.
+
+```jsx
+<WelcomeScreen.Hints.MenuHint>
+  Access menu options here
+</WelcomeScreen.Hints.MenuHint>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Custom hint text. If not provided, uses default localized text.
+</ParamField>
+
+### WelcomeScreen.Hints.ToolbarHint
+
+Points to the toolbar at the top of the canvas.
+
+```jsx
+<WelcomeScreen.Hints.ToolbarHint>
+  Use these tools to draw
+</WelcomeScreen.Hints.ToolbarHint>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Custom hint text. If not provided, uses default localized text.
+</ParamField>
+
+### WelcomeScreen.Hints.HelpHint
+
+Points to the help button in the bottom-right corner.
+
+```jsx
+<WelcomeScreen.Hints.HelpHint>
+  Click for keyboard shortcuts
+</WelcomeScreen.Hints.HelpHint>
+```
+
+<ParamField path="children" type="React.ReactNode">
+  Custom hint text. If not provided, uses default localized text.
+</ParamField>
+
+## Complete Examples
+
+<CodeGroup>
+```jsx Custom Branded Welcome Screen
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+import { 
+  PlayIcon, 
+  BookIcon, 
+  VideoIcon 
+} from "./icons";
+
+function App() {
+  const handleTutorial = () => {
+    // Start interactive tutorial
+  };
+
+  const handleVideo = () => {
+    // Open video tutorial
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo>
+              <img 
+                src="/my-logo.svg" 
+                alt="My Whiteboard" 
+                style={{ width: 120 }}
+              />
+            </WelcomeScreen.Center.Logo>
+            
+            <WelcomeScreen.Center.Heading>
+              Welcome to My Whiteboard!
+            </WelcomeScreen.Center.Heading>
+            
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItem
+                onSelect={handleTutorial}
+                icon={PlayIcon}
+                shortcut="?"
+              >
+                Start Tutorial
+              </WelcomeScreen.Center.MenuItem>
+              
+              <WelcomeScreen.Center.MenuItemLink
+                href="https://docs.myapp.com"
+                icon={BookIcon}
+              >
+                Documentation
+              </WelcomeScreen.Center.MenuItemLink>
+              
+              <WelcomeScreen.Center.MenuItem
+                onSelect={handleVideo}
+                icon={VideoIcon}
+              >
+                Watch Video Guide
+              </WelcomeScreen.Center.MenuItem>
+              
+              <WelcomeScreen.Center.MenuItemLoadScene />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          
+          <WelcomeScreen.Hints.MenuHint>
+            Open the menu for more options
+          </WelcomeScreen.Hints.MenuHint>
+          
+          <WelcomeScreen.Hints.ToolbarHint>
+            Choose your drawing tools here
+          </WelcomeScreen.Hints.ToolbarHint>
+          
+          <WelcomeScreen.Hints.HelpHint>
+            Press ? for keyboard shortcuts
+          </WelcomeScreen.Hints.HelpHint>
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+```jsx Collaboration-Focused Welcome
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+import { useState } from "react";
+
+function App() {
+  const [isCollaborating, setIsCollaborating] = useState(false);
+
+  const startCollaboration = () => {
+    setIsCollaborating(true);
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw isCollaborating={isCollaborating}>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            
+            <WelcomeScreen.Center.Heading>
+              Collaborate in Real-Time
+            </WelcomeScreen.Center.Heading>
+            
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLiveCollaborationTrigger
+                onSelect={startCollaboration}
+              />
+              
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+</CodeGroup>
+
+## Controlling Visibility
+
+The welcome screen is controlled by the `showWelcomeScreen` property in the app state:
+
+```jsx
+function App() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  const hideWelcomeScreen = () => {
+    excalidrawAPI?.updateScene({
+      appState: {
+        showWelcomeScreen: false,
+      },
+    });
+  };
+
+  const showWelcomeScreen = () => {
+    excalidrawAPI?.updateScene({
+      appState: {
+        showWelcomeScreen: true,
+      },
+    });
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <button onClick={hideWelcomeScreen}>Hide Welcome</button>
+      <button onClick={showWelcomeScreen}>Show Welcome</button>
+      
+      <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)}>
+        <WelcomeScreen>
+          <WelcomeScreen.Center />
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Styling
+
+The WelcomeScreen uses these CSS classes:
+
+```css
+/* Center panel */
+.welcome-screen-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Logo */
+.welcome-screen-center__logo {
+  margin-bottom: 1rem;
+}
+
+/* Heading */
+.welcome-screen-center__heading {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+/* Menu */
+.welcome-screen-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Menu item */
+.welcome-screen-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.welcome-screen-menu-item:hover {
+  background: #f9fafb;
+}
+
+/* Hints */
+.welcome-screen-decor-hint {
+  position: absolute;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.welcome-screen-decor-hint--menu {
+  top: 4rem;
+  left: 4rem;
+}
+
+.welcome-screen-decor-hint--toolbar {
+  top: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.welcome-screen-decor-hint--help {
+  bottom: 4rem;
+  right: 4rem;
+}
+```
+
+## Internationalization
+
+The default welcome screen text is automatically localized based on the `langCode` prop:
+
+```jsx
+<Excalidraw langCode="es"> {/* Spanish */}
+  <WelcomeScreen>
+    <WelcomeScreen.Center />
+  </WelcomeScreen>
+</Excalidraw>
+```
+
+To use custom text, provide your own content:
+
+```jsx
+<WelcomeScreen.Center.Heading>
+  {t("welcome.heading")} {/* Your i18n solution */}
+</WelcomeScreen.Center.Heading>
+```
+
+## Best Practices
+
+1. **Keep it simple** - Don't overwhelm users with too many options
+2. **Show value quickly** - Highlight the most important actions first
+3. **Use clear language** - Avoid jargon, be welcoming and friendly
+4. **Provide escape** - Make it easy for users to dismiss and start working
+5. **Consider mobile** - Ensure the welcome screen is readable on small screens
+6. **Show once** - Remember user preference to not show again
+7. **Test with users** - Validate that your welcome screen actually helps
+
+## See Also
+
+- [Excalidraw](/components/excalidraw) - Main component documentation
+- [MainMenu](/components/main-menu) - Main menu customization
+- [Footer](/components/footer) - Footer customization

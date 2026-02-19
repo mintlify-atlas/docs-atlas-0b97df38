@@ -1,0 +1,867 @@
+---
+title: "UI Components API"
+description: "Complete API reference for Excalidraw UI components including MainMenu, Sidebar, Footer, and more"
+---
+
+# UI Components API
+
+Excalidraw provides a set of composable UI components that can be used to customize the editor interface. These components can be passed as children to the main `Excalidraw` component.
+
+## Import
+
+```jsx
+import {
+  MainMenu,
+  Sidebar,
+  Footer,
+  WelcomeScreen,
+  Button,
+  LiveCollaborationTrigger,
+} from "@excalidraw/excalidraw";
+```
+
+## MainMenu
+
+The `MainMenu` component provides a customizable dropdown menu accessed via a hamburger icon.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode" required>
+  Menu items and components to display in the dropdown. Can include `MainMenu.Item`, `MainMenu.ItemLink`, `MainMenu.DefaultItems.*`, `MainMenu.Separator`, `MainMenu.Group`, and `MainMenu.Sub`.
+</ParamField>
+
+<ParamField path="onSelect" type="function">
+  Callback fired when any menu item is selected (clicked on).
+  
+  ```typescript
+  onSelect?: (event: Event) => void;
+  ```
+</ParamField>
+
+### Subcomponents
+
+#### MainMenu.Item
+
+A clickable menu item that triggers an action.
+
+```jsx
+<MainMenu.Item 
+  onSelect={handleAction}
+  icon={<MyIcon />}
+  shortcut="⌘K"
+>
+  Menu Item Label
+</MainMenu.Item>
+```
+
+<ParamField path="onSelect" type="function" required>
+  Callback when item is clicked.
+  
+  ```typescript
+  onSelect: () => void;
+  ```
+</ParamField>
+
+<ParamField path="icon" type="JSX.Element">
+  Icon to display before the label.
+</ParamField>
+
+<ParamField path="shortcut" type="string">
+  Keyboard shortcut to display (e.g., "⌘K", "Ctrl+S").
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Label content for the menu item.
+</ParamField>
+
+#### MainMenu.ItemLink
+
+A menu item that opens a link in a new tab.
+
+```jsx
+<MainMenu.ItemLink 
+  href="https://example.com"
+  icon={<LinkIcon />}
+  shortcut="⌘L"
+>
+  External Link
+</MainMenu.ItemLink>
+```
+
+<ParamField path="href" type="string" required>
+  URL to open when clicked.
+</ParamField>
+
+<ParamField path="icon" type="JSX.Element">
+  Icon to display before the label.
+</ParamField>
+
+<ParamField path="shortcut" type="string">
+  Keyboard shortcut to display.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Label content for the menu item.
+</ParamField>
+
+#### MainMenu.ItemCustom
+
+A fully custom menu item with complete control over rendering.
+
+```jsx
+<MainMenu.ItemCustom>
+  <div className="custom-menu-item">
+    {/* Your custom content */}
+  </div>
+</MainMenu.ItemCustom>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  Custom content to render.
+</ParamField>
+
+#### MainMenu.Separator
+
+A visual separator between menu items.
+
+```jsx
+<MainMenu.Separator />
+```
+
+No props.
+
+#### MainMenu.Group
+
+Groups related menu items together.
+
+```jsx
+<MainMenu.Group>
+  <MainMenu.Item onSelect={handler1}>Item 1</MainMenu.Item>
+  <MainMenu.Item onSelect={handler2}>Item 2</MainMenu.Item>
+</MainMenu.Group>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  Menu items to group together.
+</ParamField>
+
+#### MainMenu.Sub
+
+Creates a submenu.
+
+```jsx
+<MainMenu.Sub label="More Options" icon={<MoreIcon />}>
+  <MainMenu.Item onSelect={handler1}>Sub Item 1</MainMenu.Item>
+  <MainMenu.Item onSelect={handler2}>Sub Item 2</MainMenu.Item>
+</MainMenu.Sub>
+```
+
+<ParamField path="label" type="string" required>
+  Label for the submenu trigger.
+</ParamField>
+
+<ParamField path="icon" type="JSX.Element">
+  Icon to display before the label.
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Menu items to display in the submenu.
+</ParamField>
+
+#### MainMenu.Trigger
+
+Custom trigger component to open the menu (overrides default hamburger icon).
+
+```jsx
+<MainMenu.Trigger>
+  <button>Open Menu</button>
+</MainMenu.Trigger>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  Custom trigger element.
+</ParamField>
+
+### Default Items
+
+Excalidraw provides pre-built menu items accessible via `MainMenu.DefaultItems`:
+
+<ParamField path="MainMenu.DefaultItems.LoadScene" type="component">
+  Opens a file picker to load a scene from a .excalidraw file.
+  
+  ```jsx
+  <MainMenu.DefaultItems.LoadScene />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.SaveToActiveFile" type="component">
+  Saves the current scene to the active file (requires File System Access API).
+  
+  ```jsx
+  <MainMenu.DefaultItems.SaveToActiveFile />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.Export" type="component">
+  Opens the export dialog to save as PNG, SVG, or JSON.
+  
+  ```jsx
+  <MainMenu.DefaultItems.Export />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.SaveAsImage" type="component">
+  Quickly export the canvas as an image.
+  
+  ```jsx
+  <MainMenu.DefaultItems.SaveAsImage />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.Help" type="component">
+  Opens the help dialog showing keyboard shortcuts.
+  
+  ```jsx
+  <MainMenu.DefaultItems.Help />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.ClearCanvas" type="component">
+  Clears all elements from the canvas.
+  
+  ```jsx
+  <MainMenu.DefaultItems.ClearCanvas />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.ToggleTheme" type="component">
+  Toggles between light and dark themes.
+  
+  ```jsx
+  <MainMenu.DefaultItems.ToggleTheme />
+  ```
+</ParamField>
+
+<ParamField path="MainMenu.DefaultItems.ChangeCanvasBackground" type="component">
+  Opens a color picker to change the canvas background.
+  
+  ```jsx
+  <MainMenu.DefaultItems.ChangeCanvasBackground />
+  ```
+</ParamField>
+
+### Example
+
+```jsx
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleCustomAction = () => {
+    console.log("Custom action triggered");
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <MainMenu onSelect={(e) => console.log("Menu item selected", e)}>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.Separator />
+          <MainMenu.Item onSelect={handleCustomAction} icon={customIcon}>
+            Custom Action
+          </MainMenu.Item>
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Sidebar
+
+The `Sidebar` component provides a customizable sidebar that can be docked or floating.
+
+### Props
+
+<ParamField path="name" type="string" required>
+  Unique name for the sidebar. Used to identify and control the sidebar state.
+  
+  ```typescript
+  name: SidebarName; // string
+  ```
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Sidebar content including `Sidebar.Header`, `Sidebar.Tabs`, `Sidebar.Tab`, etc.
+</ParamField>
+
+<ParamField path="onStateChange" type="function">
+  Called on sidebar open/close or tab change.
+  
+  ```typescript
+  onStateChange?: (state: { name: string; tab?: string } | null) => void;
+  ```
+  
+  **Parameters:**
+  - `state` - Current open sidebar state, or `null` if closed
+</ParamField>
+
+<ParamField path="onDock" type="function">
+  Supply alongside `docked` prop to make the sidebar user-dockable.
+  
+  ```typescript
+  onDock?: (docked: boolean) => void;
+  ```
+</ParamField>
+
+<ParamField path="docked" type="boolean">
+  Controls whether the sidebar is docked. Must be used with `onDock` to enable user docking.
+  
+  ```typescript
+  docked?: boolean;
+  ```
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class name for styling.
+</ParamField>
+
+### Subcomponents
+
+#### Sidebar.Header
+
+Header component for the sidebar with title and optional dock/close buttons.
+
+```jsx
+<Sidebar.Header>
+  <h2>My Sidebar</h2>
+</Sidebar.Header>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  Header content (typically a title).
+</ParamField>
+
+#### Sidebar.Trigger
+
+Button to open/close the sidebar.
+
+```jsx
+<Sidebar.Trigger 
+  name="my-sidebar"
+  icon={<MyIcon />}
+  title="Open Sidebar"
+/>
+```
+
+<ParamField path="name" type="string" required>
+  Name of the sidebar to trigger (must match the Sidebar's `name` prop).
+  
+  ```typescript
+  name: SidebarName;
+  ```
+</ParamField>
+
+<ParamField path="tab" type="string">
+  Optional tab name to open when triggering the sidebar.
+  
+  ```typescript
+  tab?: SidebarTabName;
+  ```
+</ParamField>
+
+<ParamField path="icon" type="JSX.Element">
+  Icon to display in the trigger button.
+</ParamField>
+
+<ParamField path="title" type="string">
+  Tooltip text for the trigger button.
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class name.
+</ParamField>
+
+<ParamField path="onToggle" type="function">
+  Callback when the trigger is clicked.
+  
+  ```typescript
+  onToggle?: (open: boolean) => void;
+  ```
+</ParamField>
+
+<ParamField path="style" type="React.CSSProperties">
+  Inline styles for the trigger button.
+</ParamField>
+
+#### Sidebar.Tabs
+
+Container for sidebar tabs.
+
+```jsx
+<Sidebar.Tabs>
+  <Sidebar.Tab tab="tab1">Tab 1 Content</Sidebar.Tab>
+  <Sidebar.Tab tab="tab2">Tab 2 Content</Sidebar.Tab>
+</Sidebar.Tabs>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  `Sidebar.Tab` components.
+</ParamField>
+
+#### Sidebar.Tab
+
+Individual tab content.
+
+```jsx
+<Sidebar.Tab tab="my-tab">
+  <div>Tab content goes here</div>
+</Sidebar.Tab>
+```
+
+<ParamField path="tab" type="string" required>
+  Unique identifier for the tab.
+  
+  ```typescript
+  tab: SidebarTabName;
+  ```
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Tab content.
+</ParamField>
+
+#### Sidebar.TabTriggers
+
+Container for tab trigger buttons.
+
+```jsx
+<Sidebar.TabTriggers>
+  <Sidebar.TabTrigger tab="tab1">Tab 1</Sidebar.TabTrigger>
+  <Sidebar.TabTrigger tab="tab2">Tab 2</Sidebar.TabTrigger>
+</Sidebar.TabTriggers>
+```
+
+<ParamField path="children" type="React.ReactNode" required>
+  `Sidebar.TabTrigger` components.
+</ParamField>
+
+#### Sidebar.TabTrigger
+
+Button to switch between tabs.
+
+```jsx
+<Sidebar.TabTrigger tab="my-tab">
+  Tab Label
+</Sidebar.TabTrigger>
+```
+
+<ParamField path="tab" type="string" required>
+  Tab identifier to activate.
+  
+  ```typescript
+  tab: SidebarTabName;
+  ```
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Tab trigger label.
+</ParamField>
+
+### Example
+
+```jsx
+import { useState } from "react";
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
+
+function App() {
+  const [docked, setDocked] = useState(true);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <Sidebar
+          name="custom-sidebar"
+          docked={docked}
+          onDock={setDocked}
+          onStateChange={(state) => console.log("Sidebar state:", state)}
+        >
+          <Sidebar.Header>
+            Custom Sidebar
+          </Sidebar.Header>
+          
+          <Sidebar.TabTriggers>
+            <Sidebar.TabTrigger tab="tab1">Tab 1</Sidebar.TabTrigger>
+            <Sidebar.TabTrigger tab="tab2">Tab 2</Sidebar.TabTrigger>
+          </Sidebar.TabTriggers>
+          
+          <Sidebar.Tabs>
+            <Sidebar.Tab tab="tab1">
+              <div style={{ padding: "1rem" }}>
+                <h3>Tab 1 Content</h3>
+                <p>Your custom content here</p>
+              </div>
+            </Sidebar.Tab>
+            
+            <Sidebar.Tab tab="tab2">
+              <div style={{ padding: "1rem" }}>
+                <h3>Tab 2 Content</h3>
+                <p>More custom content</p>
+              </div>
+            </Sidebar.Tab>
+          </Sidebar.Tabs>
+        </Sidebar>
+        
+        {/* Sidebar trigger button in the UI */}
+        <Sidebar.Trigger 
+          name="custom-sidebar"
+          icon={sidebarIcon}
+          title="Open Custom Sidebar"
+        />
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Footer
+
+The `Footer` component renders the bottom toolbar with zoom controls and undo/redo buttons. It's exported for use when building custom layouts, but is typically rendered automatically by Excalidraw.
+
+```jsx
+import { Footer } from "@excalidraw/excalidraw";
+```
+
+<Info>The Footer component is usually rendered automatically. You only need to import it if you're building a completely custom layout.</Info>
+
+## WelcomeScreen
+
+The `WelcomeScreen` component displays a welcome message when the canvas is empty.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode">
+  Custom welcome screen content. If not provided, renders default hints and center content.
+</ParamField>
+
+### Subcomponents
+
+#### WelcomeScreen.Center
+
+Central welcome message area.
+
+```jsx
+<WelcomeScreen>
+  <WelcomeScreen.Center>
+    <WelcomeScreen.Center.Logo />
+    <WelcomeScreen.Center.Heading>
+      Welcome to My App!
+    </WelcomeScreen.Center.Heading>
+    <WelcomeScreen.Center.Menu>
+      <WelcomeScreen.Center.MenuItemLoadScene />
+      <WelcomeScreen.Center.MenuItemHelp />
+    </WelcomeScreen.Center.Menu>
+  </WelcomeScreen.Center>
+</WelcomeScreen>
+```
+
+**Sub-subcomponents:**
+- `WelcomeScreen.Center.Logo` - Excalidraw logo
+- `WelcomeScreen.Center.Heading` - Custom heading text
+- `WelcomeScreen.Center.Menu` - Container for menu items
+- `WelcomeScreen.Center.MenuItemLoadScene` - Load scene button
+- `WelcomeScreen.Center.MenuItemHelp` - Help button
+- `WelcomeScreen.Center.MenuItemLiveCollaborationTrigger` - Collaboration button
+
+#### WelcomeScreen.Hints
+
+UI hints around the editor.
+
+```jsx
+<WelcomeScreen>
+  <WelcomeScreen.Hints.MenuHint />
+  <WelcomeScreen.Hints.ToolbarHint />
+  <WelcomeScreen.Hints.HelpHint />
+</WelcomeScreen>
+```
+
+**Available hints:**
+- `WelcomeScreen.Hints.MenuHint` - Points to main menu
+- `WelcomeScreen.Hints.ToolbarHint` - Points to toolbar
+- `WelcomeScreen.Hints.HelpHint` - Points to help button
+
+### Example
+
+```jsx
+import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            <WelcomeScreen.Center.Heading>
+              Start Drawing Amazing Diagrams!
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Button
+
+A generic button component that follows Excalidraw's design system.
+
+### Props
+
+<ParamField path="onSelect" type="function" required>
+  Callback when button is clicked.
+  
+  ```typescript
+  onSelect: () => void;
+  ```
+</ParamField>
+
+<ParamField path="children" type="React.ReactNode" required>
+  Button content (text, icons, etc.).
+</ParamField>
+
+<ParamField path="type" type="'button' | 'submit' | 'reset'" default="button">
+  HTML button type.
+</ParamField>
+
+<ParamField path="selected" type="boolean">
+  Whether button is in active/selected state.
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class name for styling.
+</ParamField>
+
+<ParamField path="...rest" type="ButtonHTMLAttributes">
+  All standard HTML button attributes are supported (disabled, style, aria-*, etc.).
+</ParamField>
+
+### Example
+
+```jsx
+import { Button } from "@excalidraw/excalidraw";
+
+function MyComponent() {
+  const handleClick = () => {
+    console.log("Button clicked");
+  };
+
+  return (
+    <Button 
+      onSelect={handleClick}
+      selected={false}
+      className="my-custom-button"
+      disabled={false}
+    >
+      Click Me
+    </Button>
+  );
+}
+```
+
+## LiveCollaborationTrigger
+
+A button component for triggering live collaboration mode, displaying the share icon and active collaborator count.
+
+### Props
+
+<ParamField path="isCollaborating" type="boolean" required>
+  Whether collaboration mode is active.
+  
+  ```typescript
+  isCollaborating: boolean;
+  ```
+</ParamField>
+
+<ParamField path="onSelect" type="function" required>
+  Callback when the button is clicked.
+  
+  ```typescript
+  onSelect: () => void;
+  ```
+</ParamField>
+
+<ParamField path="editorInterface" type="EditorInterface">
+  Editor interface details for responsive behavior.
+  
+  ```typescript
+  editorInterface?: EditorInterface;
+  ```
+</ParamField>
+
+<ParamField path="...rest" type="ButtonHTMLAttributes">
+  All standard HTML button attributes are supported.
+</ParamField>
+
+### Example
+
+```jsx
+import { useState } from "react";
+import { Excalidraw, LiveCollaborationTrigger } from "@excalidraw/excalidraw";
+
+function App() {
+  const [isCollaborating, setIsCollaborating] = useState(false);
+
+  const handleCollaboration = () => {
+    setIsCollaborating(!isCollaborating);
+    // Your collaboration logic here
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw isCollaborating={isCollaborating}>
+        <LiveCollaborationTrigger
+          isCollaborating={isCollaborating}
+          onSelect={handleCollaboration}
+        />
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Complete Example
+
+Here's a comprehensive example using multiple UI components together:
+
+```jsx
+import { useState } from "react";
+import {
+  Excalidraw,
+  MainMenu,
+  Sidebar,
+  WelcomeScreen,
+  LiveCollaborationTrigger,
+  Button,
+} from "@excalidraw/excalidraw";
+
+function App() {
+  const [isCollaborating, setIsCollaborating] = useState(false);
+  const [sidebarDocked, setSidebarDocked] = useState(true);
+
+  const handleExport = () => {
+    console.log("Export triggered");
+  };
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw isCollaborating={isCollaborating}>
+        {/* Main Menu */}
+        <MainMenu>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.Separator />
+          <MainMenu.Item onSelect={handleExport} icon={exportIcon}>
+            Export to Cloud
+          </MainMenu.Item>
+          <MainMenu.Separator />
+          <MainMenu.DefaultItems.Help />
+        </MainMenu>
+
+        {/* Custom Sidebar */}
+        <Sidebar
+          name="my-sidebar"
+          docked={sidebarDocked}
+          onDock={setSidebarDocked}
+        >
+          <Sidebar.Header>Tools</Sidebar.Header>
+          <Sidebar.TabTriggers>
+            <Sidebar.TabTrigger tab="shapes">Shapes</Sidebar.TabTrigger>
+            <Sidebar.TabTrigger tab="assets">Assets</Sidebar.TabTrigger>
+          </Sidebar.TabTriggers>
+          <Sidebar.Tabs>
+            <Sidebar.Tab tab="shapes">
+              <div style={{ padding: "1rem" }}>
+                <h3>Custom Shapes</h3>
+                {/* Your custom shapes */}
+              </div>
+            </Sidebar.Tab>
+            <Sidebar.Tab tab="assets">
+              <div style={{ padding: "1rem" }}>
+                <h3>Assets Library</h3>
+                {/* Your assets */}
+              </div>
+            </Sidebar.Tab>
+          </Sidebar.Tabs>
+        </Sidebar>
+
+        {/* Welcome Screen */}
+        <WelcomeScreen>
+          <WelcomeScreen.Center>
+            <WelcomeScreen.Center.Logo />
+            <WelcomeScreen.Center.Heading>
+              Create Amazing Diagrams
+            </WelcomeScreen.Center.Heading>
+            <WelcomeScreen.Center.Menu>
+              <WelcomeScreen.Center.MenuItemLoadScene />
+              <WelcomeScreen.Center.MenuItemHelp />
+            </WelcomeScreen.Center.Menu>
+          </WelcomeScreen.Center>
+          <WelcomeScreen.Hints.MenuHint />
+          <WelcomeScreen.Hints.ToolbarHint />
+          <WelcomeScreen.Hints.HelpHint />
+        </WelcomeScreen>
+
+        {/* Collaboration Trigger */}
+        <LiveCollaborationTrigger
+          isCollaborating={isCollaborating}
+          onSelect={() => setIsCollaborating(!isCollaborating)}
+        />
+      </Excalidraw>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## Styling
+
+All UI components can be styled using CSS classes:
+
+```css
+/* MainMenu */
+.main-menu-trigger { }
+.main-menu { }
+.main-menu-item { }
+
+/* Sidebar */
+.excalidraw-sidebar { }
+.excalidraw-sidebar.sidebar--docked { }
+
+/* Button */
+.excalidraw-button { }
+.excalidraw-button.selected { }
+
+/* LiveCollaborationTrigger */
+.collab-button { }
+.collab-button.active { }
+.CollabButton-collaborators { }
+```
+
+## See Also
+
+- [Excalidraw Component API](/api/excalidraw-component) - Main component API reference
+- [MainMenu](/components/main-menu) - MainMenu usage guide
+- [Sidebar](/components/sidebar) - Sidebar usage guide
+- [WelcomeScreen](/components/welcome-screen) - WelcomeScreen usage guide
+- [Customization Guide](/guides/customization) - Customize component appearance

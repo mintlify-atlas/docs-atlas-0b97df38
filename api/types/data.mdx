@@ -1,0 +1,387 @@
+---
+title: "Data Types"
+description: "Type definitions for data import/export and binary files"
+---
+
+## ImportedDataState
+
+Data structure for importing Excalidraw scenes. All fields are optional to allow partial imports.
+
+<ResponseField name="type" type="string">
+  Type identifier for the data format
+</ResponseField>
+
+<ResponseField name="version" type="number">
+  Version number of the data format
+</ResponseField>
+
+<ResponseField name="source" type="string">
+  Source application or identifier
+</ResponseField>
+
+<ResponseField name="elements" type="readonly ExcalidrawElement[] | null">
+  Array of elements to import, or null
+</ResponseField>
+
+<ResponseField name="appState" type="Partial<AppState> | null">
+  Partial application state to import. Can include legacy AppState properties:
+  - `isSidebarDocked` (deprecated) maps to `defaultSidebarDockedPreference`
+</ResponseField>
+
+<ResponseField name="scrollToContent" type="boolean">
+  Whether to scroll to the imported content after loading
+</ResponseField>
+
+<ResponseField name="libraryItems" type="LibraryItems_anyVersion">
+  Library items to import (supports v1 and v2 formats)
+</ResponseField>
+
+<ResponseField name="files" type="BinaryFiles">
+  Binary files (images, etc.) associated with the elements
+</ResponseField>
+
+## ExportedDataState
+
+Data structure for exporting Excalidraw scenes. This is a stricter version of ImportedDataState with required fields.
+
+<ResponseField name="type" type="string" required>
+  Type identifier, typically `"excalidraw"`
+</ResponseField>
+
+<ResponseField name="version" type="number" required>
+  Version number of the Excalidraw format
+</ResponseField>
+
+<ResponseField name="source" type="string" required>
+  Source application identifier
+</ResponseField>
+
+<ResponseField name="elements" type="readonly ExcalidrawElement[]" required>
+  Array of all elements in the scene
+</ResponseField>
+
+<ResponseField name="appState" type="ReturnType<typeof cleanAppStateForExport>" required>
+  Cleaned application state with only exportable properties
+</ResponseField>
+
+<ResponseField name="files" type="BinaryFiles | undefined" required>
+  Binary files associated with the scene, or undefined if none
+</ResponseField>
+
+## BinaryFileData
+
+Represents a binary file (typically an image) in Excalidraw.
+
+<ResponseField name="mimeType" type="ValueOf<typeof IMAGE_MIME_TYPES> | typeof MIME_TYPES.binary" required>
+  MIME type of the file. Can be an image type or generic binary
+</ResponseField>
+
+<ResponseField name="id" type="FileId" required>
+  Unique identifier for the file (branded string type)
+</ResponseField>
+
+<ResponseField name="dataURL" type="DataURL" required>
+  Data URL containing the file contents (branded string type)
+</ResponseField>
+
+<ResponseField name="created" type="number" required>
+  Epoch timestamp in milliseconds when the file was created
+</ResponseField>
+
+<ResponseField name="lastRetrieved" type="number">
+  Epoch timestamp in milliseconds when the file was last retrieved from storage. Used to determine whether to delete unused files from storage
+</ResponseField>
+
+<ResponseField name="version" type="number">
+  Version of the file. Used to determine whether the file dataURL has changed (e.g., as part of restore due to schema update)
+</ResponseField>
+
+## BinaryFileMetadata
+
+Binary file data without the actual data URL (useful for listing files without loading full data).
+
+```typescript
+type BinaryFileMetadata = Omit<BinaryFileData, "dataURL">
+```
+
+<ResponseField name="mimeType" type="string" required>
+  MIME type of the file
+</ResponseField>
+
+<ResponseField name="id" type="FileId" required>
+  File identifier
+</ResponseField>
+
+<ResponseField name="created" type="number" required>
+  Creation timestamp
+</ResponseField>
+
+<ResponseField name="lastRetrieved" type="number">
+  Last retrieved timestamp
+</ResponseField>
+
+<ResponseField name="version" type="number">
+  File version
+</ResponseField>
+
+## BinaryFiles
+
+A record mapping element IDs to their associated binary file data.
+
+```typescript
+type BinaryFiles = Record<ExcalidrawElement["id"], BinaryFileData>
+```
+
+## Library Types
+
+### LibraryItem
+
+Represents a reusable component in the library (v2 format).
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the library item
+</ResponseField>
+
+<ResponseField name="status" type="'published' | 'unpublished'" required>
+  Publication status of the library item
+</ResponseField>
+
+<ResponseField name="elements" type="readonly NonDeleted<ExcalidrawElement>[]" required>
+  Array of elements that make up this library item
+</ResponseField>
+
+<ResponseField name="created" type="number" required>
+  Timestamp in epoch milliseconds when the item was created
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Optional name for the library item
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if the library item failed to load
+</ResponseField>
+
+### LibraryItems
+
+Array of library items (v2 format).
+
+```typescript
+type LibraryItems = readonly LibraryItem[]
+```
+
+### LibraryItem_v1 (Deprecated)
+
+Legacy v1 library item format. Do not use outside of migration paths.
+
+```typescript
+type LibraryItem_v1 = readonly NonDeleted<ExcalidrawElement>[]
+```
+
+### LibraryItems_v1 (Deprecated)
+
+Legacy v1 library items array. Do not use outside of migration paths.
+
+```typescript
+type LibraryItems_v1 = readonly LibraryItem_v1[]
+```
+
+### LibraryItems_anyVersion
+
+Union type supporting both v1 and v2 library formats for backward compatibility.
+
+```typescript
+type LibraryItems_anyVersion = LibraryItems | LibraryItems_v1
+```
+
+## ExportedLibraryData
+
+Data structure for exporting library data.
+
+<ResponseField name="type" type="string" required>
+  Type identifier, typically `"excalidrawlib"`
+</ResponseField>
+
+<ResponseField name="version" type="typeof VERSIONS.excalidrawLibrary" required>
+  Version number of the library format
+</ResponseField>
+
+<ResponseField name="source" type="string" required>
+  Source application identifier
+</ResponseField>
+
+<ResponseField name="libraryItems" type="LibraryItems" required>
+  Array of library items (v2 format)
+</ResponseField>
+
+## ImportedLibraryData
+
+Data structure for importing library data. Supports both current and legacy formats.
+
+<ResponseField name="type" type="string">
+  Type identifier
+</ResponseField>
+
+<ResponseField name="version" type="number">
+  Version number
+</ResponseField>
+
+<ResponseField name="source" type="string">
+  Source application identifier
+</ResponseField>
+
+<ResponseField name="libraryItems" type="LibraryItems">
+  Library items in v2 format
+</ResponseField>
+
+<ResponseField name="library" type="LibraryItems">
+  **Deprecated (v1)** - Legacy library format
+</ResponseField>
+
+## ExcalidrawLibraryIds
+
+Helper type for tracking library item IDs.
+
+<ResponseField name="itemIds" type="LibraryItem['id'][]" required>
+  Array of library item IDs
+</ResponseField>
+
+## SceneData
+
+Data structure for updating the scene, used with the `updateScene` API method.
+
+<ResponseField name="elements" type="ImportedDataState['elements']">
+  Elements to update in the scene
+</ResponseField>
+
+<ResponseField name="appState" type="ImportedDataState['appState']">
+  Application state to update
+</ResponseField>
+
+<ResponseField name="collaborators" type="Map<SocketId, Collaborator>">
+  Collaborators to update
+</ResponseField>
+
+<ResponseField name="captureUpdate" type="CaptureUpdateActionType">
+  Whether to capture this update in history for undo/redo
+</ResponseField>
+
+## ExcalidrawInitialDataState
+
+Extended import data state used when initializing Excalidraw.
+
+```typescript
+type ExcalidrawInitialDataState = Merge<
+  ImportedDataState,
+  {
+    libraryItems?: MaybePromise<Required<ImportedDataState>["libraryItems"]>
+  }
+>
+```
+
+Inherits all properties from `ImportedDataState` but allows `libraryItems` to be a Promise.
+
+## Branded Types
+
+These are string types with runtime branding for type safety:
+
+### DataURL
+
+String representing a data URL (base64 encoded file data).
+
+```typescript
+type DataURL = string & { _brand: "DataURL" }
+```
+
+### FileId
+
+String representing a unique file identifier.
+
+```typescript
+type FileId = string & { _brand: "FileId" }
+```
+
+### SocketId
+
+String representing a WebSocket connection identifier.
+
+```typescript
+type SocketId = string & { _brand: "SocketId" }
+```
+
+## Legacy Types
+
+### LegacyAppState
+
+Map of deprecated AppState keys for migration purposes.
+
+<ResponseField name="isSidebarDocked" type="[boolean, 'defaultSidebarDockedPreference']">
+  **Deprecated #6213** - Maps to `defaultSidebarDockedPreference`. TODO: remove 23-06-01
+</ResponseField>
+
+<Callout type="warning">
+  The `LegacyAppState` type is a helper for downstream abstractions during data migration. Do not consume it directly in new code.
+</Callout>
+
+## Usage Examples
+
+### Importing Data
+
+```typescript
+import { ImportedDataState } from "@excalidraw/excalidraw";
+
+const importData: ImportedDataState = {
+  type: "excalidraw",
+  version: 2,
+  source: "my-app",
+  elements: [...],
+  appState: {
+    viewBackgroundColor: "#ffffff",
+    currentItemStrokeColor: "#000000"
+  },
+  files: {
+    "file-id-123": {
+      mimeType: "image/png",
+      id: "file-id-123",
+      dataURL: "data:image/png;base64,...",
+      created: Date.now()
+    }
+  }
+};
+```
+
+### Working with Binary Files
+
+```typescript
+import { BinaryFiles, BinaryFileData } from "@excalidraw/excalidraw";
+
+const files: BinaryFiles = {};
+
+const imageFile: BinaryFileData = {
+  mimeType: "image/png",
+  id: "image-123" as FileId,
+  dataURL: "data:image/png;base64,iVBORw0KG..." as DataURL,
+  created: Date.now(),
+  lastRetrieved: Date.now(),
+  version: 1
+};
+
+files["element-id"] = imageFile;
+```
+
+### Exporting Data
+
+```typescript
+import { ExportedDataState } from "@excalidraw/excalidraw";
+
+const exportedData: ExportedDataState = {
+  type: "excalidraw",
+  version: 2,
+  source: "https://excalidraw.com",
+  elements: excalidrawAPI.getSceneElements(),
+  appState: cleanAppStateForExport(excalidrawAPI.getAppState()),
+  files: excalidrawAPI.getFiles()
+};
+
+const json = JSON.stringify(exportedData);
+```

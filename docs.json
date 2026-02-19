@@ -1,122 +1,131 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Excalidraw",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6965db",
+    "light": "#a5d8ff",
+    "dark": "#4c6ef5"
   },
   "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/excalidraw/excalidraw"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/excalidraw/excalidraw",
+      "twitter": "https://twitter.com/excalidraw",
+      "discord": "https://discord.gg/UexuTaE"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/elements",
+              "concepts/app-state",
+              "concepts/scene",
+              "concepts/collaboration"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/customization",
+              "guides/theming",
+              "guides/i18n",
+              "guides/export",
+              "guides/storage",
+              "guides/embedding"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Components",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "components/excalidraw",
+              "components/main-menu",
+              "components/sidebar",
+              "components/footer",
+              "components/welcome-screen",
+              "components/buttons"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/react-integration",
+              "examples/nextjs",
+              "examples/vanilla-js"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Components",
             "pages": [
-              "api-reference/introduction"
+              "api/excalidraw-component",
+              "api/ui-components"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Props & Options",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/props",
+              "api/ui-options",
+              "api/initial-data"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/element-utils",
+              "api/export-utils",
+              "api/scene-utils",
+              "api/restore-utils"
+            ]
+          },
+          {
+            "group": "Types",
+            "pages": [
+              "api/types/elements",
+              "api/types/app-state",
+              "api/types/data"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Contributing",
+        "groups": [
+          {
+            "group": "Development",
+            "pages": [
+              "contributing/setup",
+              "contributing/architecture",
+              "contributing/guidelines",
+              "contributing/testing"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }
