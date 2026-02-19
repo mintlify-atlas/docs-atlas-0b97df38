@@ -7,6 +7,55 @@ description: "Utility functions for manipulating and working with Excalidraw ele
 
 Utility functions for creating, mutating, and working with Excalidraw elements.
 
+## Import
+
+```jsx
+import {
+  // Element creation
+  newElement,
+  newTextElement,
+  newLinearElement,
+  newArrowElement,
+  newImageElement,
+  newFrameElement,
+  
+  // Element mutation
+  mutateElement,
+  newElementWith,
+  bumpVersion,
+  
+  // Element queries
+  getNonDeletedElements,
+  getSceneVersion,
+  hashElementsVersion,
+  hashString,
+  
+  // Element bounds
+  getElementAbsoluteCoords,
+  getElementBounds,
+  getCommonBounds,
+  getVisibleSceneBounds,
+  
+  // Bounding box utilities
+  elementsOverlappingBBox,
+  isElementInsideBBox,
+  elementPartiallyOverlapsWithOrContainsBBox,
+  
+  // Data utilities
+  getDataURL,
+  
+  // Library utilities
+  parseLibraryTokensFromUrl,
+  useHandleLibrary,
+  
+  // Text utilities
+  setCustomTextMetricsProvider,
+  
+  // Types
+  CaptureUpdateAction,
+} from "@excalidraw/excalidraw";
+```
+
 ## Element Creation
 
 ### newElement
@@ -662,6 +711,369 @@ function refreshTextDimensions(
 <ResponseField name="dimensions" type="object">
   Updated text, position, and dimensions
 </ResponseField>
+
+## Bounding Box Utilities
+
+### elementsOverlappingBBox
+
+Finds elements that overlap with, contain, or are inside a bounding box.
+
+```typescript
+function elementsOverlappingBBox(opts: {
+  elements: readonly NonDeletedExcalidrawElement[];
+  bounds: Bounds | ExcalidrawElement;
+  errorMargin?: number;
+  type: "overlap" | "contain" | "inside";
+}): readonly NonDeletedExcalidrawElement[];
+```
+
+<ParamField path="elements" type="readonly NonDeletedExcalidrawElement[]" required>
+  Elements to check against the bounding box.
+</ParamField>
+
+<ParamField path="bounds" type="Bounds | ExcalidrawElement" required>
+  Bounding box as `[x1, y1, x2, y2]` or an element to use its bounds.
+</ParamField>
+
+<ParamField path="errorMargin" type="number" default="0">
+  Safety offset in pixels to expand the bounding box.
+</ParamField>
+
+<ParamField path="type" type="'overlap' | 'contain' | 'inside'" required>
+  - `overlap`: Elements overlapping or inside bounds
+  - `contain`: Elements inside bounds or bounds inside elements
+  - `inside`: Elements inside bounds only
+</ParamField>
+
+<ResponseField name="elements" type="NonDeletedExcalidrawElement[]">
+  Array of elements matching the criteria.
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { elementsOverlappingBBox } from "@excalidraw/excalidraw";
+
+// Find elements overlapping a selection box
+const selectedElements = elementsOverlappingBBox({
+  elements: allElements,
+  bounds: [100, 100, 400, 400],
+  type: "overlap",
+});
+
+// Find elements completely inside a frame
+const elementsInFrame = elementsOverlappingBBox({
+  elements: allElements,
+  bounds: frameElement,
+  type: "inside",
+});
+```
+
+### isElementInsideBBox
+
+Checks if an element is inside a bounding box.
+
+```typescript
+function isElementInsideBBox(
+  element: NonDeletedExcalidrawElement,
+  bbox: Bounds,
+  eitherDirection?: boolean
+): boolean;
+```
+
+<ParamField path="element" type="NonDeletedExcalidrawElement" required>
+  Element to check.
+</ParamField>
+
+<ParamField path="bbox" type="Bounds" required>
+  Bounding box as `[x1, y1, x2, y2]`.
+</ParamField>
+
+<ParamField path="eitherDirection" type="boolean" default="false">
+  If `true`, also returns `true` if bbox is inside element.
+</ParamField>
+
+<ResponseField name="result" type="boolean">
+  `true` if element is inside the bounding box.
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { isElementInsideBBox } from "@excalidraw/excalidraw";
+
+const bounds = [0, 0, 500, 500];
+const isInside = isElementInsideBBox(element, bounds);
+
+if (isInside) {
+  console.log("Element is inside the bounds");
+}
+```
+
+### elementPartiallyOverlapsWithOrContainsBBox
+
+Checks if an element partially overlaps with or contains a bounding box.
+
+```typescript
+function elementPartiallyOverlapsWithOrContainsBBox(
+  element: NonDeletedExcalidrawElement,
+  bbox: Bounds
+): boolean;
+```
+
+<ParamField path="element" type="NonDeletedExcalidrawElement" required>
+  Element to check.
+</ParamField>
+
+<ParamField path="bbox" type="Bounds" required>
+  Bounding box as `[x1, y1, x2, y2]`.
+</ParamField>
+
+<ResponseField name="result" type="boolean">
+  `true` if element overlaps or contains the bounding box.
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { elementPartiallyOverlapsWithOrContainsBBox } from "@excalidraw/excalidraw";
+
+const dragBox = [100, 100, 200, 200];
+const overlaps = elementPartiallyOverlapsWithOrContainsBBox(element, dragBox);
+
+if (overlaps) {
+  console.log("Element should be selected");
+}
+```
+
+## Data Utilities
+
+### getDataURL
+
+Converts a Blob or File to a Data URL (async).
+
+```typescript
+function getDataURL(file: Blob | File): Promise<DataURL>;
+```
+
+<ParamField path="file" type="Blob | File" required>
+  File or Blob to convert.
+</ParamField>
+
+<ResponseField name="dataURL" type="DataURL">
+  Base64-encoded data URL string.
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { getDataURL } from "@excalidraw/excalidraw";
+
+const file = new File(["Hello"], "test.txt", { type: "text/plain" });
+const dataURL = await getDataURL(file);
+console.log(dataURL); // "data:text/plain;base64,SGVsbG8="
+```
+
+## Library Utilities
+
+### parseLibraryTokensFromUrl
+
+Extracts library installation URL and ID token from the current page URL.
+
+```typescript
+function parseLibraryTokensFromUrl(): {
+  libraryUrl: string;
+  idToken: string | null;
+} | null;
+```
+
+<ResponseField name="result" type="object | null">
+  Object with `libraryUrl` and `idToken`, or `null` if not found.
+</ResponseField>
+
+**Example:**
+
+```typescript
+import { parseLibraryTokensFromUrl } from "@excalidraw/excalidraw";
+
+// URL: https://excalidraw.com/#addLibrary=https://example.com/lib.excalidrawlib
+const tokens = parseLibraryTokensFromUrl();
+
+if (tokens) {
+  console.log("Library URL:", tokens.libraryUrl);
+  console.log("ID Token:", tokens.idToken);
+}
+```
+
+### useHandleLibrary
+
+Hook for handling library loading, updates, and persistence.
+
+```typescript
+function useHandleLibrary(opts: {
+  excalidrawAPI: ExcalidrawImperativeAPI | null;
+  validateLibraryUrl?: (url: string) => boolean;
+} & (
+  | { getInitialLibraryItems?: () => MaybePromise<LibraryItemsSource> }
+  | {
+      adapter: LibraryPersistenceAdapter;
+      migrationAdapter?: LibraryMigrationAdapter;
+    }
+)): void;
+```
+
+<ParamField path="excalidrawAPI" type="ExcalidrawImperativeAPI | null" required>
+  Excalidraw API instance.
+</ParamField>
+
+<ParamField path="validateLibraryUrl" type="function">
+  Custom validator for library installation URLs.
+  
+  ```typescript
+  validateLibraryUrl?: (url: string) => boolean;
+  ```
+</ParamField>
+
+<ParamField path="adapter" type="LibraryPersistenceAdapter">
+  Adapter for persisting library to storage.
+  
+  ```typescript
+  interface LibraryPersistenceAdapter {
+    load(metadata: { source: "load" | "save" }): Promise<{
+      libraryItems: LibraryItems;
+    } | null>;
+    save(data: { libraryItems: LibraryItems }): Promise<void>;
+  }
+  ```
+</ParamField>
+
+<ParamField path="migrationAdapter" type="LibraryMigrationAdapter">
+  Optional adapter for migrating from legacy storage.
+  
+  ```typescript
+  interface LibraryMigrationAdapter {
+    load(): Promise<{ libraryItems: LibraryItems } | null>;
+    clear(): Promise<void>;
+  }
+  ```
+</ParamField>
+
+**Example:**
+
+```typescript
+import { useHandleLibrary } from "@excalidraw/excalidraw";
+
+function MyEditor() {
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+
+  useHandleLibrary({
+    excalidrawAPI,
+    adapter: {
+      async load() {
+        const data = localStorage.getItem("excalidraw-library");
+        return data ? JSON.parse(data) : null;
+      },
+      async save({ libraryItems }) {
+        localStorage.setItem(
+          "excalidraw-library",
+          JSON.stringify({ libraryItems })
+        );
+      },
+    },
+  });
+
+  return <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />;
+}
+```
+
+## Text Utilities
+
+### setCustomTextMetricsProvider
+
+Sets a custom text metrics provider for measuring text dimensions.
+
+```typescript
+function setCustomTextMetricsProvider(
+  provider: (
+    text: string,
+    font: string
+  ) => {
+    width: number;
+    height: number;
+  }
+): void;
+```
+
+<ParamField path="provider" type="function" required>
+  Function that measures text and returns width/height.
+  
+  ```typescript
+  provider: (text: string, font: string) => {
+    width: number;
+    height: number;
+  };
+  ```
+</ParamField>
+
+**Example:**
+
+```typescript
+import { setCustomTextMetricsProvider } from "@excalidraw/excalidraw";
+
+// Use a custom text measurement implementation
+setCustomTextMetricsProvider((text, font) => {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.font = font;
+  
+  const metrics = ctx.measureText(text);
+  
+  return {
+    width: metrics.width,
+    height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+  };
+});
+```
+
+## Types
+
+### CaptureUpdateAction
+
+Enum-like object that controls when element updates are captured in the undo/redo history.
+
+```typescript
+const CaptureUpdateAction = {
+  IMMEDIATELY: "IMMEDIATELY",
+  NEVER: "NEVER",
+  EVENTUALLY: "EVENTUALLY",
+};
+
+type CaptureUpdateActionType = ValueOf<typeof CaptureUpdateAction>;
+```
+
+**Values:**
+
+- `IMMEDIATELY` - Updates are immediately undoable. Use for most local updates.
+- `NEVER` - Updates never make it to undo/redo stack. Use for remote updates or scene initialization.
+- `EVENTUALLY` - Updates will eventually be captured as part of a future increment.
+
+**Example:**
+
+```typescript
+import { CaptureUpdateAction } from "@excalidraw/excalidraw";
+
+// When updating scene programmatically
+excalidrawAPI.updateScene({
+  elements: newElements,
+  captureUpdate: CaptureUpdateAction.NEVER, // Don't add to undo stack
+});
+
+// When updating in response to user action
+excalidrawAPI.updateScene({
+  elements: modifiedElements,
+  captureUpdate: CaptureUpdateAction.IMMEDIATELY, // Allow undo
+});
+```
 
 ## See Also
 

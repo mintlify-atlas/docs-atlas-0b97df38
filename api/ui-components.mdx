@@ -17,6 +17,16 @@ import {
   WelcomeScreen,
   Button,
   LiveCollaborationTrigger,
+  Stats,
+  DefaultSidebar,
+  Ellipsify,
+  TTDDialog,
+  TTDDialogTrigger,
+  TTDStreamFetch,
+  DiagramToCodePlugin,
+  CommandPalette,
+  useEditorInterface,
+  useStylesPanelMode,
 } from "@excalidraw/excalidraw";
 ```
 
@@ -856,6 +866,567 @@ All UI components can be styled using CSS classes:
 .collab-button { }
 .collab-button.active { }
 .CollabButton-collaborators { }
+```
+
+## Stats
+
+The `Stats` component displays canvas statistics and element properties in a floating panel. It provides detailed information about selected elements and the overall scene.
+
+### Props
+
+<ParamField path="app" type="AppClassProperties" required>
+  The Excalidraw app instance.
+  
+  ```typescript
+  app: AppClassProperties;
+  ```
+</ParamField>
+
+<ParamField path="onClose" type="function" required>
+  Callback when the stats panel is closed.
+  
+  ```typescript
+  onClose: () => void;
+  ```
+</ParamField>
+
+<ParamField path="renderCustomStats" type="function">
+  Render custom statistics in the panel.
+  
+  ```typescript
+  renderCustomStats?: (
+    elements: readonly NonDeletedExcalidrawElement[],
+    appState: AppState
+  ) => React.ReactNode;
+  ```
+</ParamField>
+
+### Subcomponents
+
+#### Stats.StatsRow
+
+Renders a row in the stats panel.
+
+```jsx
+<Stats.StatsRow columns={2}>
+  <div>Width</div>
+  <div>100</div>
+</Stats.StatsRow>
+```
+
+<ParamField path="columns" type="number" default="1">
+  Number of columns in the row grid.
+</ParamField>
+
+<ParamField path="heading" type="boolean">
+  Whether this row is a heading.
+</ParamField>
+
+#### Stats.StatsRows
+
+Container for multiple stat rows with optional ordering.
+
+```jsx
+<Stats.StatsRows order={1}>
+  {/* Multiple StatsRow components */}
+</Stats.StatsRows>
+```
+
+<ParamField path="order" type="number">
+  Display order of this stats group.
+</ParamField>
+
+### Example
+
+```jsx
+import { Stats } from "@excalidraw/excalidraw";
+
+function CustomStats() {
+  const renderCustomStats = (elements, appState) => (
+    <Stats.StatsRows order={999}>
+      <Stats.StatsRow heading>Custom Stats</Stats.StatsRow>
+      <Stats.StatsRow columns={2}>
+        <div>Total Elements</div>
+        <div>{elements.length}</div>
+      </Stats.StatsRow>
+    </Stats.StatsRows>
+  );
+
+  return (
+    <Excalidraw
+      renderCustomStats={renderCustomStats}
+    />
+  );
+}
+```
+
+## DefaultSidebar
+
+The `DefaultSidebar` component provides the default sidebar with library and search functionality.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode">
+  Custom sidebar tabs to add to the default sidebar.
+</ParamField>
+
+<ParamField path="docked" type="boolean">
+  Whether the sidebar is docked.
+</ParamField>
+
+<ParamField path="onDock" type="function | false">
+  Callback when sidebar dock state changes. Pass `false` to disable docking.
+  
+  ```typescript
+  onDock?: ((docked: boolean) => void) | false;
+  ```
+</ParamField>
+
+<ParamField path="className" type="string">
+  Additional CSS class name.
+</ParamField>
+
+### Subcomponents
+
+#### DefaultSidebar.Trigger
+
+Trigger button for the default sidebar.
+
+```jsx
+<DefaultSidebar.Trigger
+  icon={<MyIcon />}
+  title="Open Sidebar"
+/>
+```
+
+#### DefaultSidebar.TabTriggers
+
+Container for adding custom tab triggers to the default sidebar.
+
+```jsx
+<DefaultSidebar.TabTriggers>
+  <Sidebar.TabTrigger tab="my-custom-tab">
+    My Tab
+  </Sidebar.TabTrigger>
+</DefaultSidebar.TabTriggers>
+```
+
+### Example
+
+```jsx
+import { Excalidraw, DefaultSidebar, Sidebar } from "@excalidraw/excalidraw";
+
+function App() {
+  return (
+    <div style={{ height: "100vh" }}>
+      <Excalidraw>
+        <DefaultSidebar>
+          <Sidebar.Tab tab="custom-tab">
+            <div style={{ padding: "1rem" }}>
+              Custom tab content
+            </div>
+          </Sidebar.Tab>
+        </DefaultSidebar>
+        
+        <DefaultSidebar.Trigger />
+      </Excalidraw>
+    </div>
+  );
+}
+```
+
+## Ellipsify
+
+A utility component that adds text ellipsis overflow handling.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode" required>
+  Content to ellipsify.
+</ParamField>
+
+<ParamField path="...rest" type="React.HTMLAttributes<HTMLSpanElement>">
+  All standard HTML span attributes are supported.
+</ParamField>
+
+### Example
+
+```jsx
+import { Ellipsify } from "@excalidraw/excalidraw";
+
+<Ellipsify style={{ maxWidth: "200px" }}>
+  This is a very long text that will be truncated with ellipsis
+</Ellipsify>
+```
+
+## TTDDialog
+
+Text-to-Diagram dialog component for AI-powered diagram generation.
+
+### Props
+
+<ParamField path="onTextSubmit" type="function" required>
+  Callback when text is submitted for diagram generation.
+  
+  ```typescript
+  onTextSubmit: (props: {
+    prompt: string;
+    sessionId: string;
+  }) => Promise<{
+    generatedResponse: string;
+    error: Error | null;
+  }>;
+  ```
+</ParamField>
+
+<ParamField path="renderWelcomeScreen" type="function">
+  Render custom welcome screen content.
+  
+  ```typescript
+  renderWelcomeScreen?: () => React.ReactNode;
+  ```
+</ParamField>
+
+<ParamField path="renderWarning" type="function">
+  Render custom warning message.
+  
+  ```typescript
+  renderWarning?: () => React.ReactNode;
+  ```
+</ParamField>
+
+<ParamField path="persistenceAdapter" type="TTDPersistenceAdapter" required>
+  Adapter for persisting chat history.
+  
+  ```typescript
+  persistenceAdapter: {
+    load: () => Promise<SavedChats | null>;
+    save: (chats: SavedChats) => Promise<void>;
+    clear: () => Promise<void>;
+  };
+  ```
+</ParamField>
+
+### Subcomponents
+
+#### TTDDialog.WelcomeMessage
+
+Default welcome message component.
+
+```jsx
+<TTDDialog.WelcomeMessage />
+```
+
+### Example
+
+```jsx
+import { Excalidraw, TTDDialog } from "@excalidraw/excalidraw";
+
+function App() {
+  const handleTextSubmit = async ({ prompt }) => {
+    // Call your AI API
+    const response = await fetch("/api/generate-diagram", {
+      method: "POST",
+      body: JSON.stringify({ prompt }),
+    });
+    
+    const data = await response.json();
+    return {
+      generatedResponse: data.mermaidCode,
+      error: null,
+    };
+  };
+
+  const persistenceAdapter = {
+    load: async () => {
+      const saved = localStorage.getItem("ttd-chats");
+      return saved ? JSON.parse(saved) : null;
+    },
+    save: async (chats) => {
+      localStorage.setItem("ttd-chats", JSON.stringify(chats));
+    },
+    clear: async () => {
+      localStorage.removeItem("ttd-chats");
+    },
+  };
+
+  return (
+    <Excalidraw>
+      <TTDDialog
+        onTextSubmit={handleTextSubmit}
+        persistenceAdapter={persistenceAdapter}
+      />
+    </Excalidraw>
+  );
+}
+```
+
+## TTDDialogTrigger
+
+Trigger button to open the Text-to-Diagram dialog.
+
+### Props
+
+<ParamField path="children" type="React.ReactNode">
+  Custom button label. Defaults to "Text to Diagram".
+</ParamField>
+
+<ParamField path="icon" type="JSX.Element">
+  Custom icon for the trigger button.
+</ParamField>
+
+### Example
+
+```jsx
+import { MainMenu, TTDDialogTrigger } from "@excalidraw/excalidraw";
+
+<MainMenu>
+  <TTDDialogTrigger>
+    Generate Diagram with AI
+  </TTDDialogTrigger>
+</MainMenu>
+```
+
+## TTDStreamFetch
+
+Utility function for streaming text-to-diagram API responses.
+
+```typescript
+function TTDStreamFetch(options: {
+  url: string;
+  messages: readonly LLMMessage[];
+  onChunk?: (chunk: string) => void;
+  extractRateLimits?: boolean;
+  signal?: AbortSignal;
+  onStreamCreated?: () => void;
+}): Promise<{
+  generatedResponse?: string;
+  error: Error | null;
+  rateLimit?: number;
+  rateLimitRemaining?: number;
+}>;
+```
+
+### Parameters
+
+<ParamField path="url" type="string" required>
+  API endpoint URL for streaming.
+</ParamField>
+
+<ParamField path="messages" type="readonly LLMMessage[]" required>
+  Array of messages to send to the LLM.
+</ParamField>
+
+<ParamField path="onChunk" type="function">
+  Callback for each chunk of streamed text.
+  
+  ```typescript
+  onChunk?: (chunk: string) => void;
+  ```
+</ParamField>
+
+<ParamField path="extractRateLimits" type="boolean" default="true">
+  Whether to extract rate limit headers from the response.
+</ParamField>
+
+<ParamField path="signal" type="AbortSignal">
+  AbortSignal for cancelling the request.
+</ParamField>
+
+<ParamField path="onStreamCreated" type="function">
+  Callback when the stream is created.
+</ParamField>
+
+### Example
+
+```jsx
+import { TTDStreamFetch } from "@excalidraw/excalidraw";
+
+const controller = new AbortController();
+
+const result = await TTDStreamFetch({
+  url: "/api/generate-diagram",
+  messages: [
+    { role: "user", content: "Create a flowchart for user authentication" }
+  ],
+  onChunk: (chunk) => {
+    console.log("Received chunk:", chunk);
+  },
+  signal: controller.signal,
+});
+
+if (!result.error) {
+  console.log("Generated:", result.generatedResponse);
+}
+```
+
+## DiagramToCodePlugin
+
+Plugin component for adding diagram-to-code conversion functionality.
+
+### Props
+
+<ParamField path="generate" type="function" required>
+  Function to generate code from the diagram.
+  
+  ```typescript
+  generate: (opts: {
+    elements: readonly NonDeletedExcalidrawElement[];
+    files: BinaryFiles;
+    appState: AppState;
+    frameId?: string;
+  }) => Promise<{
+    code: string;
+    language: string;
+  }>;
+  ```
+</ParamField>
+
+### Example
+
+```jsx
+import { Excalidraw, DiagramToCodePlugin } from "@excalidraw/excalidraw";
+
+function App() {
+  const generateCode = async ({ elements, frameId }) => {
+    // Your code generation logic
+    const code = await convertElementsToCode(elements);
+    
+    return {
+      code,
+      language: "typescript",
+    };
+  };
+
+  return (
+    <Excalidraw>
+      <DiagramToCodePlugin generate={generateCode} />
+    </Excalidraw>
+  );
+}
+```
+
+## CommandPalette
+
+Command palette component for quick access to editor actions via keyboard shortcuts.
+
+### Props
+
+<ParamField path="customCommandPaletteItems" type="CommandPaletteItem[]">
+  Custom commands to add to the palette.
+  
+  ```typescript
+  interface CommandPaletteItem {
+    label: string;
+    category: string;
+    icon?: JSX.Element;
+    shortcut?: string;
+    keywords?: string[];
+    viewMode?: boolean;
+    predicate?: boolean | PredicateFunction;
+    perform: (opts: { 
+      actionManager: ActionManager;
+      event: React.MouseEvent | React.KeyboardEvent | KeyboardEvent;
+    }) => void;
+  }
+  ```
+</ParamField>
+
+### Default Items
+
+The `CommandPalette.defaultItems` export provides access to pre-built command items:
+
+```jsx
+import { CommandPalette } from "@excalidraw/excalidraw";
+
+// Available default items include:
+// - exportImage
+// - loadScene
+// - clearCanvas
+// - changeViewBackgroundColor
+// And more...
+```
+
+### Example
+
+```jsx
+import { Excalidraw, CommandPalette } from "@excalidraw/excalidraw";
+
+function App() {
+  const customCommands = [
+    {
+      label: "Export to Cloud",
+      category: "Export",
+      icon: <CloudIcon />,
+      keywords: ["save", "upload"],
+      perform: ({ actionManager }) => {
+        // Your export logic
+        console.log("Exporting to cloud...");
+      },
+    },
+  ];
+
+  return (
+    <Excalidraw>
+      <CommandPalette customCommandPaletteItems={customCommands} />
+    </Excalidraw>
+  );
+}
+```
+
+The command palette opens with `Cmd/Ctrl + Shift + P` or `Cmd/Ctrl + /`.
+
+## Hooks
+
+### useEditorInterface
+
+Hook to access the editor's interface information including form factor and sidebar visibility.
+
+```typescript
+function useEditorInterface(): {
+  formFactor: "desktop" | "tablet" | "phone";
+  isSidebarDocked: boolean;
+};
+```
+
+**Example:**
+
+```jsx
+import { useEditorInterface } from "@excalidraw/excalidraw";
+
+function MyComponent() {
+  const editorInterface = useEditorInterface();
+  
+  if (editorInterface.formFactor === "phone") {
+    return <MobileView />;
+  }
+  
+  return <DesktopView />;
+}
+```
+
+### useStylesPanelMode
+
+Hook to get the current styles panel mode derived from the editor interface.
+
+```typescript
+function useStylesPanelMode(): "inline" | "popover";
+```
+
+**Example:**
+
+```jsx
+import { useStylesPanelMode } from "@excalidraw/excalidraw";
+
+function MyComponent() {
+  const mode = useStylesPanelMode();
+  
+  return (
+    <div className={`styles-panel-${mode}`}>
+      {/* Your component content */}
+    </div>
+  );
+}
 ```
 
 ## See Also
